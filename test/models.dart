@@ -39,6 +39,7 @@ class Article extends Model {
 
   int bar = 3;
 
+  /// Must provide for creation in constructing in Query
   Article({
     this.id,
     this.topic,
@@ -47,13 +48,11 @@ class Article extends Model {
     this.category,
   });
 
-  /// by select order?
-  Article.load(this.id, this.topic, this.author, this.cid, this.category);
-
-  static query({
-    String? filter = 'id=1',
+  ///
+  static BaseQuery<Article> query({
+    String? filter,
     int? limit,
     Type? joinable,
   }) =>
-      Model.query(filter: filter, limit: limit);
+      Model.query<Article>(filter: filter, limit: limit);
 }

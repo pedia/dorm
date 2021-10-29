@@ -26,7 +26,7 @@ class Table extends table {
 
   Dialect get dialect {
     if (_dialect == null && bind != null) {
-      _dialect = db.sessionOf(bind!)?.dialect;
+      _dialect = db.session(bind!)?.dialect;
     }
 
     // default Dialect
@@ -169,38 +169,73 @@ abstract class Model {
     ].join(' ');
   }
 
-  // static BaseQuery query = BaseQuery();
-  static BaseQuery<T>? query<T extends Model>({
-    String? filter = 'id=1',
+  static BaseQuery<T> query<T extends Model>({
+    String? filter,
     int? limit,
     Type? joinable,
   }) =>
-      null;
+      BaseQuery<T>(filter: filter, limit: limit);
 }
 
 ///
-abstract class BaseQuery<T extends Model> {
+class BaseQuery<T extends Model> extends IterableMixin<T>
+    implements Iterable<T> {
   String? filter;
   int? limitCount;
 
   BaseQuery({
     this.filter,
     int? limit,
+    // TODO: join, select
   }) : limitCount = limit;
 
-  BaseQuery where(String filter) {
-    this.filter = filter;
-    return this;
+  String get sql {
+    return 'SELECT * FROM article';
   }
 
-  BaseQuery limit(int n) {
-    limitCount = n;
-    return this;
+  ResultSet? _resultSet;
+
+  ResultSet prepare() {
+    final atable = tableOf(T);
+    final session = db.session(atable!.bind!);
+    if (session == null) {
+      throw Exception('No session bind for "${atable.bind}"');
+    }
+
+    return session.query(sql);
   }
 
-  BaseQuery join(Type joinable, [Type? where]) {
-    return this;
+  @override
+  Iterator<T> get iterator {
+    _resultSet ??= prepare();
+    return _ModelIterator<T>(_resultSet!);
+  }
+}
+
+class _ModelIterator<T extends Model> extends Iterator<T> {
+  final ResultSet result;
+  int index = -1;
+
+  _ModelIterator(this.result);
+
+  @override
+  T get current {
+    final row = result.rows[index];
+
+    final classMirror = reflectClass(T);
+
+    final args = <Symbol, dynamic>{};
+    for (int i = 0; i < result.columnNames.length; ++i) {
+      args[Symbol(result.columnNames[i])] = row[i];
+    }
+
+    final im = classMirror.newInstance(Symbol(''), [], args);
+    return im.reflectee as T;
   }
 
-  Iterable<T> all();
+  @override
+  bool moveNext() {
+    index++;
+    return index < result.rows.length;
+  }
 }

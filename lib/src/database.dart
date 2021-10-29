@@ -66,8 +66,9 @@ class Database {
     Table? table = tableOf(model);
 
     if (table != null) {
-      assert(!tables.containsKey(table.name));
       // TODO: Log multiple retister
+      assert(!tables.containsKey(table.name));
+
       tables[table.name] = table;
     }
   }
@@ -79,12 +80,18 @@ class Database {
   createAll() {
     tables.forEach((name, atable) {
       if (atable.bind != null) {
-        sessionOf(atable.bind!)?.ensureOpen().execute(atable.createSql);
+        session(atable.bind!)?.ensureOpen().execute(atable.createSql);
       }
     });
   }
 
-  Session? sessionOf(String bind) => binds[bind];
+  Session? session([String bind = 'default']) => binds[bind];
+
+  /// Keep used in test only.
+  void clear() {
+    binds.clear();
+    tables.clear();
+  }
 }
 
 /// global instance.
