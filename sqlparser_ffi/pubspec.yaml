@@ -1,0 +1,32 @@
+name: sqlparser_ffi
+description: A starting point for Dart libraries or applications.
+version: 1.0.0
+# homepage: https://www.example.com
+
+environment:
+  sdk: '>=2.14.0 <3.0.0'
+
+
+dependencies:
+  path: ^1.8.0
+  ffi:
+
+dev_dependencies:
+  lints: ^1.0.0
+  test: ^1.16.0
+  ffigen:
+
+ffigen:
+  output: 'lib/_sqlparser_ffi.dart'
+  name: 'SqlParserFfi'
+  description: 'Holds bindings to sqlparser.'
+  headers:
+    entry-points:
+      - 'rslib/sqlparser.h'
+  comments: false
+  typedef-map:
+    'size_t': 'IntPtr'
+
+  functions:
+    rename:
+      parse_as_json: parseAsJson
