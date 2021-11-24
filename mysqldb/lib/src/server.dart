@@ -2,19 +2,21 @@ part of mysql.server;
 
 ///
 class Server {
-  static Future<Server> start() async {
-    return ServerSocket.bind(InternetAddress.anyIPv4, 3305).then<Server>(
-      (socket) => Server(socket).._init(),
+  static Future<Server> start(String address, Database db) async {
+    final arr = address.split(':');
+    return ServerSocket.bind(arr[0], int.parse(arr[1])).then<Server>(
+      (socket) => Server(socket, db).._init(),
     );
   }
 
+  final Database db;
   final Capability capability = Capability.kServerDefault; // 5.7
   final String version = '5.7.36';
   final ServerSocket socket;
   final Password authPlugin;
   final clients = <Client>[];
 
-  Server(this.socket, [this.authPlugin = const NativePassword()]);
+  Server(this.socket, this.db, [this.authPlugin = const NativePassword()]);
 
   String get address => socket.address.address;
 
@@ -55,7 +57,7 @@ class Server {
 }
 
 ///
-class Client with Database {
+class Client {
   final Socket socket;
   final int threadId;
   final Server server;
@@ -131,20 +133,19 @@ class Client with Database {
       ).sendTo(socket);
     } else {
       final p = Packet.parse(InputStream.from(data), server.capability);
-      // final q = Query.parse(p.inputStream);
-      // if (verbose) {
-      //   print('query: ${q.sql}');
-      // }
 
-      // final rs = query(q.sql);
-      // if (rs != null) {
-      //   addRaw(rs.encode());
-      // }
+      final q = QueryCommand.parse(p.inputStream);
+      if (verbose) {
+        print('query: ${q.sql}');
+      }
+
+      server.db.query(q.sql).then((rs) {
+        rs ??= ResultSet.empty();
+
+        addRaw(rs.encode());
+      }).catchError((err) {
+        // send Packet for no permission...
+      });
     }
-
-    //
-    // mysql7 -P3305 -h127.0.0.1 -pexample -uroot test
-    // mysql7 -P3305 -h127.0.0.1 -p -uempty test
-    //
   }
 }
