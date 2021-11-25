@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:mysqldb/src/stream.dart';
+import 'package:mysqldb/impl.dart';
 
 Uint8List bytesFromHexed(String s) {
   final out = OutputStream();

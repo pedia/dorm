@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:sqlparser_ffi/sqlparser.dart';
 
 import 'src/debug.dart';
-import 'src/stream.dart';
 import 'impl.dart';
 
 part 'src/server.dart';

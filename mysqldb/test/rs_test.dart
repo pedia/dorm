@@ -1,6 +1,4 @@
 import 'package:mysqldb/impl.dart';
-
-import 'package:mysqldb/src/stream.dart';
 import 'package:mysqldb/src/debug.dart';
 import 'package:test/test.dart';
 import 'hexstring.dart';

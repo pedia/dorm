@@ -35,9 +35,9 @@ class ColumnDefinition {
     required this.charset,
     required this.columnLength,
     required this.columnType,
-    required this.flags,
-    required this.decimals,
-    required this.filler,
+    this.flags = 0,
+    this.decimals = 0,
+    this.filler = 0,
     this.defaultValueLength,
     this.defaultValue,
   });
@@ -114,12 +114,28 @@ class ResultSet extends Packet {
 
   factory ResultSet.empty() => ResultSet([], []);
 
+  ///
+  int encodeRows(int seqid, OutputStream out) {
+    for (Row row in rows) {
+      final sub = OutputStream();
+      for (Field field in row) {
+        field.encode(sub);
+      }
+
+      final buf = sub.finished();
+      out.write3ByteLength(buf.length);
+      out.write8(seqid++);
+      out.write(buf);
+    }
+    return seqid;
+  }
+
   @override
   Uint8List encode() {
     final out = OutputStream();
     int seqid = 1;
     // 1
-    out.write3ByteLength(1); // TODO:
+    out.write3ByteLength(1);
     out.write8(seqid++);
     out.write8(columns.length);
 
@@ -137,17 +153,7 @@ class ResultSet extends Packet {
     out.write(eof);
 
     // 4 row
-    for (Row row in rows) {
-      final sub = OutputStream();
-      for (Field field in row) {
-        field.encode(sub);
-      }
-
-      final buf = sub.finished();
-      out.write3ByteLength(buf.length);
-      out.write8(seqid++);
-      out.write(buf);
-    }
+    seqid = encodeRows(seqid, out);
 
     // 5
     out.write3ByteLength(eof.length);

@@ -9,11 +9,11 @@ import 'package:convert/convert.dart' show hex, AccumulatorSink;
 import 'package:crypto/crypto.dart';
 import 'dart:convert' show utf8;
 
-import 'src/stream.dart';
 import 'src/debug.dart';
 import 'src/flag.dart';
 
 part 'src/command.dart';
+part 'src/stream.dart';
 
 part 'src/packets/authentication.dart';
 part 'src/packets/caching_sha2_password.dart';

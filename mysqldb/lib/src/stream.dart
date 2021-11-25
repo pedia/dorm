@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-import 'dart:convert' show utf8;
+part of mysql.impl;
 
 /// Interface for input streams used to extract some types from
 /// a sequence of bytes.
