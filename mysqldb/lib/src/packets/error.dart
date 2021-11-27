@@ -52,7 +52,8 @@ class ErrorPacket extends Packet {
 class EofPacket extends Packet {
   final int warnings;
   final int serverStatus;
-  EofPacket(this.warnings, this.serverStatus) : super(0);
+  EofPacket(this.warnings, [this.serverStatus = ServerStatus.statusAutocommit])
+      : super(0);
 
   @override
   Uint8List encode() {
@@ -92,7 +93,7 @@ class OkPacket extends Packet {
   OkPacket({
     this.affectedRows = 0,
     this.lastInsertId = 0,
-    required this.serverStatus,
+    this.serverStatus = ServerStatus.statusAutocommit,
     this.warningCount = 0,
     this.info,
     this.sessionStateChanges,

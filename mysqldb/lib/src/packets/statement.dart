@@ -1,14 +1,31 @@
 part of mysql.impl;
 
 ///
-class QueryCommand extends Packet {
+class CommandPacket extends Packet {
   final Command command;
-  final String sql;
+  CommandPacket(this.command);
 
+  factory CommandPacket.parse(InputStream input) {
+    final cmd = Command.values[input.readu8()];
+    switch (cmd) {
+      case Command.query:
+      case Command.initDb:
+      case Command.stmtPrepare:
+        return QueryCommand.parse(cmd, input);
+      case Command.fieldList:
+        return FieldListCommand.parse(input);
+      default:
+        throw UnimplementedError('TODO: $cmd');
+    }
+  }
+}
+
+class QueryCommand extends CommandPacket {
+  final String sql;
   QueryCommand({
-    this.command = Command.query,
+    Command command = Command.query,
     required this.sql,
-  });
+  }) : super(command);
 
   @override
   Uint8List encode() {
@@ -18,22 +35,31 @@ class QueryCommand extends Packet {
     return out.finished();
   }
 
-  factory QueryCommand.parse(InputStream input) => QueryCommand(
-        command: Command.values[input.readu8()],
-        sql: input.readEofString(),
-      );
+  factory QueryCommand.parse(Command command, InputStream input) =>
+      QueryCommand(command: command, sql: input.readEofString());
 }
 
 ///
-class PrepareStatement extends QueryCommand {
-  PrepareStatement({
-    Command command = Command.stmtPrepare,
-    required String sql,
-  }) : super(command: Command.stmtPrepare, sql: sql);
+class FieldListCommand extends CommandPacket {
+  final String table;
+  final String fieldWildcard;
+  FieldListCommand({
+    required this.table,
+    required this.fieldWildcard,
+  }) : super(Command.fieldList);
 
-  factory PrepareStatement.parse(InputStream input) => PrepareStatement(
-        command: Command.values[input.readu8()],
-        sql: input.readEofString(),
+  @override
+  Uint8List encode() {
+    final out = OutputStream();
+    out.write8(command.index);
+    out.writeCString(table);
+    out.writeString(fieldWildcard);
+    return out.finished();
+  }
+
+  factory FieldListCommand.parse(InputStream input) => FieldListCommand(
+        table: input.readCString(),
+        fieldWildcard: input.readEofString(),
       );
 }
 

@@ -40,7 +40,7 @@ class Field {
 
   Field({this.value, this.width, required this.def});
 
-  factory Field.string(String value, ColumnDefinition def) =>
+  factory Field.string(String? value, ColumnDefinition def) =>
       Field(value: value, def: def);
 
   Uint8List encode([OutputStream? out]) {

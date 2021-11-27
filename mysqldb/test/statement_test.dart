@@ -12,12 +12,30 @@ main() {
 
     final p = Packet.parse(InputStream.from(showdb));
 
-    final q = QueryCommand.parse(p.inputStream);
-    expect(q.sql, 'show databases');
+    final q = CommandPacket.parse(p.inputStream);
+    expect((q as QueryCommand).sql, 'show databases');
     expect(q.command, Command.query);
 
     final dest = Packet(0, q.encode()).encode();
     expect(dest, showdb);
+
+    // demo:
+    CommandPacket.parse(Packet.parse(
+            InputStream.from(bytesFromHexed('05 00 00 00 02 74 65 73 74')))
+        .inputStream);
+
+    final t = CommandPacket.parse(
+      Packet.parse(
+        InputStream.from(
+          bytesFromHexed('05 00 00 00 02 74 65 73 74'),
+        ),
+      ).inputStream,
+    );
+
+    expect(t.command, Command.initDb);
+    expect((t as QueryCommand).sql, 'test');
+
+    // 07 00 00 01 00 00 00 02    00 00 00
   });
 
   // 0c00 0000 0373 686f 7720 7461 626c 6573   .....show tables

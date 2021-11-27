@@ -69,7 +69,10 @@ class Client {
   void init() {
     socket.listen(
       onData,
-      onDone: () => server.remove(this),
+      onDone: () {
+        if (verbose) print('Client $threadId closed.');
+        server.remove(this);
+      },
     );
 
     rnd = Salt().generate();
@@ -115,8 +118,7 @@ class Client {
       bool logined = server.validate(sa.user, rnd, sa.scramble);
       clientCapability = sa.clientFlag;
       if (verbose) {
-        print('client capablity: ${sa.clientFlag.setted} '
-            '${sa.user} ${sa.db} $logined');
+        print('client user: ${sa.user}, db: ${sa.db}, logined: $logined');
       }
 
       Packet.build(
@@ -134,21 +136,27 @@ class Client {
     } else {
       final p = Packet.parse(InputStream.from(data), server.capability);
 
-      final q = QueryCommand.parse(p.inputStream);
-      if (verbose) {
-        print('query: ${q.sql}');
+      final cmd = CommandPacket.parse(p.inputStream);
+      if (verbose) print(cmd);
+
+      if (cmd.command != Command.query) {
+        server.db.handle(cmd).then((answer) {
+          addRaw(Packet.build(p.packetId! + 1, answer).encode());
+        });
+        return;
       }
 
-      server.db.query(q.sql).then((rs) {
-        rs ??= ResultSet.empty();
-
-        addRaw(rs.encode());
-      }).catchError((err) {
-        if (verbose) {
-          print('query ${q.sql} failed: $err');
-        }
-        addRaw(ErrorPacket(code: 10064, message: err.toString()).encode());
-      });
+      if (cmd.command == Command.query) {
+        final q = cmd as QueryCommand;
+        server.db.query(q.sql).then((rs) {
+          addRaw(rs.encode());
+        }).catchError((err) {
+          if (verbose) {
+            print('query ${q.sql} failed: $err');
+          }
+          addRaw(ErrorPacket(code: 30000, message: err.toString()).encode());
+        });
+      }
     }
   }
 }

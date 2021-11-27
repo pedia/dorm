@@ -1,7 +1,9 @@
 part of mysql.server;
 
 abstract class Database {
-  Future<ResultSet?> query(String sql);
+  Future<ResultSet> query(String sql);
+  Future<Packet> handle(CommandPacket cmd);
+
   // {
   //   return ResultSet.empty();
   // final rs = parser.extract(sql);
