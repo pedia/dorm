@@ -215,11 +215,17 @@ class Field {
         // return Field(fieldType, v, 8);
         assert(false);
         break;
+      case typeFloat:
+      case typeDouble:
+        return (value as double).toStringAsFixed(def.decimals);
       case typeDate:
       case typeDatetime:
-      case typeTimestamp:
         // 2021-11-07 13:32:57.000 to 2021-11-07 13:32:57
         return (value as DateTime).toString().substring(0, 19);
+      case typeTimestamp:
+        final dt = DateTime.fromMillisecondsSinceEpoch((value as int) * 1000,
+            isUtc: true);
+        return dt.toString().substring(0, 19);
       case typeTime:
         final d = Duration(seconds: value as int);
         final s = '${d.inHours.toStringAsFixed(2).padLeft(2, '0')}:'

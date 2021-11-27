@@ -42,11 +42,36 @@ class ColumnDefinition {
     this.defaultValue,
   });
 
+  ColumnDefinition apply({
+    String? catalog,
+    String? schema,
+    String? table,
+    String? orgTable,
+    String? name,
+    String? orgName,
+    int? charset,
+    int? columnLength,
+    int? columnType,
+    int? decimals,
+  }) =>
+      ColumnDefinition(
+        catalog: catalog ?? this.catalog,
+        schema: schema ?? this.schema,
+        table: table ?? this.table,
+        orgTable: orgTable ?? this.orgTable,
+        name: name ?? this.name,
+        orgName: orgName ?? this.orgName,
+        charset: charset ?? this.charset,
+        columnLength: columnLength ?? this.columnLength,
+        columnType: columnType ?? this.columnType,
+        decimals: decimals ?? this.decimals,
+      );
+
   factory ColumnDefinition.varString(
           String table, String name, int columnLength) =>
       ColumnDefinition(
         catalog: 'def',
-        schema: 'mysql',
+        schema: '',
         table: table,
         orgTable: table,
         name: name,
@@ -54,9 +79,7 @@ class ColumnDefinition {
         charset: Charset.utf8,
         columnLength: columnLength,
         columnType: Field.typeVarString,
-        flags: 0,
-        decimals: 0,
-        filler: 0,
+        decimals: 31,
       );
 
   Uint8List encode([OutputStream? out]) {
@@ -114,21 +137,10 @@ class ResultSet extends Packet {
 
   factory ResultSet.empty() => ResultSet([], []);
 
-  ///
-  int encodeRows(int seqid, OutputStream out) {
-    for (Row row in rows) {
-      final sub = OutputStream();
-      for (Field field in row) {
-        field.encode(sub);
-      }
+  int get rowCount => rows.length;
+  int get columnCount => columns.length;
 
-      final buf = sub.finished();
-      out.write3ByteLength(buf.length);
-      out.write8(seqid++);
-      out.write(buf);
-    }
-    return seqid;
-  }
+  Field fieldOf(int row, int col) => rows[row][col];
 
   @override
   Uint8List encode() {
@@ -153,7 +165,17 @@ class ResultSet extends Packet {
     out.write(eof);
 
     // 4 row
-    seqid = encodeRows(seqid, out);
+    for (int row = 0; row < rowCount; ++row) {
+      final sub = OutputStream();
+      for (int col = 0; col < columnCount; ++col) {
+        fieldOf(row, col).encode(sub);
+      }
+
+      final buf = sub.finished();
+      out.write3ByteLength(buf.length);
+      out.write8(seqid++);
+      out.write(buf);
+    }
 
     // 5
     out.write3ByteLength(eof.length);
@@ -211,9 +233,9 @@ class ResultSet extends Packet {
   @override
   String toString() {
     final widthList = columns.map((col) => col.name.length).toList();
-    for (int i = 0; i < rows.length; ++i) {
+    for (int i = 0; i < rowCount; ++i) {
       for (int c = 0; c < columns.length; ++c) {
-        widthList[c] = max(widthList[c], rows[i][c].width ?? 0);
+        widthList[c] = max(widthList[c], fieldOf(i, c).width ?? 0);
       }
     }
 
@@ -221,14 +243,9 @@ class ResultSet extends Packet {
     final cs = columns.map((col) => col.name.padLeft(widthList[i++])).join('|');
 
     final rs = <String>[];
-    for (int r = 0; r < rows.length; ++r) {
-      final row = rows[r];
-
-      i = 0;
-      final s = row
-          .map((field) => field.toString().padLeft(widthList[i++]))
-          .join('|');
-
+    for (int r = 0; r < rowCount; ++r) {
+      final s = List.generate(columnCount,
+          (i) => fieldOf(r, i).toString().padLeft(widthList[i++])).join('|');
       rs.add(s);
     }
 

@@ -4,7 +4,105 @@ import 'package:test/test.dart';
 import 'hexstring.dart';
 
 main() {
+  /// show databases
+  test('ResultSetTest0', () {
+    final rsbytes = bytesFromHexed(''
+        '01 00 00 01 01 4b 00 00    02 03 64 65 66 12 69 6e' // .....K....def.in
+        '66 6f 72 6d 61 74 69 6f    6e 5f 73 63 68 65 6d 61' // formation_schema
+        '08 53 43 48 45 4d 41 54    41 08 53 43 48 45 4d 41' // .SCHEMATA.SCHEMA
+        '54 41 08 44 61 74 61 62    61 73 65 0b 53 43 48 45' // TA.Database.SCHE
+        '4d 41 5f 4e 41 4d 45 0c    21 00 c0 00 00 00 fd 01' // MA_NAME.!.�...�.
+        '00 00 00 00 05 00 00 03    fe 00 00 22 00 13 00 00' // ........�.."....
+        '04 12 69 6e 66 6f 72 6d    61 74 69 6f 6e 5f 73 63' // ..information_sc
+        '68 65 6d 61 06 00 00 05    05 6d 79 73 71 6c 13 00' // hema.....mysql..
+        '00 06 12 70 65 72 66 6f    72 6d 61 6e 63 65 5f 73' // ...performance_s
+        '63 68 65 6d 61 04 00 00    07 03 73 79 73 05 00 00' // chema.....sys...
+        '08 04 74 65 73 74 05 00    00 09 fe 00 00 22 00' //     ..test....�..".
+        );
+    final rs = ResultSet.parse(InputStream.from(rsbytes));
+    expect(
+      rs.serverStatus,
+      ServerStatus.statusAutocommit | ServerStatus.statusNoIndexUsed,
+    );
+    expect(rs.columns.length, 1);
+    expect(rs.columns.first.catalog, 'def');
+    expect(rs.columns.first.charset, Charset.utf8);
+    expect(rs.columns.first.columnLength, 192);
+    expect(rs.columns.first.columnType, Field.typeVarString);
+    expect(rs.columns.first.decimals, 0);
+    expect(rs.columns.first.name, 'Database');
+    expect(rs.columns.first.nextLength, 12);
+    expect(rs.columns.first.orgName, 'SCHEMA_NAME');
+    expect(rs.columns.first.orgTable, 'SCHEMATA');
+    expect(rs.columns.first.schema, 'information_schema');
+    expect(rs.columns.first.table, 'SCHEMATA');
+    expect(rs.rows.length, 5);
+  });
+
+  /// select @@version_comment limit 1
   test('ResultSetTest1', () {
+    final bytes = bytesFromHexed(''
+        '01 00 00 01 01 27 00 00    02 03 64 65 66 00 00 00' // .....'....def...
+        '11 40 40 76 65 72 73 69    6f 6e 5f 63 6f 6d 6d 65' // .@@version_comme
+        '6e 74 00 0c 21 00 54 00    00 00 fd 00 00 1f 00 00' // nt..!.T...�.....
+        '05 00 00 03 fe 00 00 02    00 1d 00 00 04 1c 4d 79' // ....�.........My
+        '53 51 4c 20 43 6f 6d 6d    75 6e 69 74 79 20 53 65' // SQL Community Se
+        '72 76 65 72 20 28 47 50    4c 29 05 00 00 05 fe 00' // rver (GPL)....�.
+        '00 02 00' //                                           ...
+        );
+
+    final rs = ResultSet.parse(InputStream.from(bytes));
+    expect(rs.encode(), bytes);
+
+    expect(rs.serverStatus, ServerStatus.statusAutocommit);
+    expect(rs.columns.length, 1);
+    expect(rs.columns.first.catalog, 'def');
+    expect(rs.columns.first.charset, Charset.utf8);
+    expect(rs.columns.first.columnLength, 84);
+    expect(rs.columns.first.columnType, Field.typeVarString);
+    expect(rs.columns.first.decimals, 31);
+    expect(rs.columns.first.name, '@@version_comment');
+    expect(rs.columns.first.nextLength, 12);
+    expect(rs.columns.first.orgName, '');
+    expect(rs.columns.first.orgTable, '');
+    expect(rs.columns.first.schema, '');
+    expect(rs.columns.first.table, '');
+    expect(rs.rows.length, 1);
+  });
+
+  /// show tables
+  test('ResultSetTest2', () {
+    final bytes = bytesFromHexed(''
+        '01 00 00 01 01 56 00 00    02 03 64 65 66 12 69 6e' // .....V....def.in
+        '66 6f 72 6d 61 74 69 6f    6e 5f 73 63 68 65 6d 61' // formation_schema
+        '0b 54 41 42 4c 45 5f 4e    41 4d 45 53 0b 54 41 42' // .TABLE_NAMES.TAB
+        '4c 45 5f 4e 41 4d 45 53    0e 54 61 62 6c 65 73 5f' // LE_NAMES.Tables_
+        '69 6e 5f 74 65 73 74 0a    54 41 42 4c 45 5f 4e 41' // in_test.TABLE_NA
+        '4d 45 0c 21 00 c0 00 00    00 fd 01 00 00 00 00 05' // ME.!.�...�......
+        '00 00 03 fe 00 00 22 00    04 00 00 04 03 66 6f 6f' // ...�.."......foo
+        '06 00 00 05 05 74 61 62    6c 65 06 00 00 06 05 74' // .....table.....t
+        '79 70 65 73 05 00 00 07    fe 00 00 22 00' //          ypes....�..".
+        );
+
+    final rs = ResultSet.parse(InputStream.from(bytes));
+    expect(rs.encode(), bytes);
+
+    expect(rs.columns.length, 1);
+    expect(rs.columns.first.catalog, 'def');
+    expect(rs.columns.first.charset, Charset.utf8);
+    expect(rs.columns.first.columnLength, 192);
+    expect(rs.columns.first.columnType, Field.typeVarString);
+    expect(rs.columns.first.decimals, 0);
+    expect(rs.columns.first.name, 'Tables_in_test');
+    expect(rs.columns.first.nextLength, 12);
+    expect(rs.columns.first.orgName, 'TABLE_NAME');
+    expect(rs.columns.first.orgTable, 'TABLE_NAMES');
+    expect(rs.columns.first.schema, 'information_schema');
+    expect(rs.columns.first.table, 'TABLE_NAMES');
+    expect(rs.rows.length, 3);
+  });
+
+  test('ResultSetTest4', () {
     final rsbytes = bytesFromHexed(''
         '0100 0001 0d29 0000 0203 6465' //  .j.......)....de
         '6605 6d79 7371 6c05 7479 7065 7305 7479' //  f.mysql.types.ty 1
@@ -59,7 +157,6 @@ main() {
         );
 
     final rs = ResultSet.parse(InputStream.from(rsbytes));
-    print(rs);
 
     expect(
       rs.serverStatus,
@@ -92,20 +189,7 @@ main() {
     expect(dest, rsbytes);
   });
 
-  test('ResultSetTest2', () {
-    final bytes = bytesFromHexed(''
-        '01 00 00 01 01 30 00 00    02 03 64 65 66 04 74 65' //  .....0....def.te
-        '73 74 05 74 61 62 6c 65    05 74 61 62 6c 65 06 63' //  st.table.table.c
-        '6f 6c 75 6d 6e 06 63 6f    6c 75 6d 6e 0c 21 00 2c' //  olumn.column.!.,
-        '01 00 00 fd 00 00 00 00    00 05 00 00 03 fe 00 00' //  ... ......... ..
-        '22 00 04 00 00 04 03 66    6f 6f 04 00 00 05 03 62' //  "......foo.....b
-        '61 72 05 00 00 06 fe 00    00 22 00'); //               ar.... ..".
-
-    final rs = ResultSet.parse(InputStream.from(bytes));
-    expect(rs.encode(), bytes);
-  });
-
-  test('ResultSetTest3', () {
+  test('ResultSetTest5', () {
     final bytes = bytesFromHexed(''
         '01 00 00 01 03 26 00 00    02 03 64 65 66 04 74 65' //  .....&....def.te
         '73 74 03 66 6f 6f 03 66    6f 6f 03 62 61 72 03 62' //  st.foo.foo.bar.b

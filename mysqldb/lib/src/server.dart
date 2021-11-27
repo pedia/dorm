@@ -144,7 +144,10 @@ class Client {
 
         addRaw(rs.encode());
       }).catchError((err) {
-        // send Packet for no permission...
+        if (verbose) {
+          print('query ${q.sql} failed: $err');
+        }
+        addRaw(ErrorPacket(code: 10064, message: err.toString()).encode());
       });
     }
   }
