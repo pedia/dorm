@@ -11,13 +11,13 @@ main() {
         '66 6f 72 6d 61 74 69 6f    6e 5f 73 63 68 65 6d 61' // formation_schema
         '08 53 43 48 45 4d 41 54    41 08 53 43 48 45 4d 41' // .SCHEMATA.SCHEMA
         '54 41 08 44 61 74 61 62    61 73 65 0b 53 43 48 45' // TA.Database.SCHE
-        '4d 41 5f 4e 41 4d 45 0c    21 00 c0 00 00 00 fd 01' // MA_NAME.!.�...�.
-        '00 00 00 00 05 00 00 03    fe 00 00 22 00 13 00 00' // ........�.."....
+        '4d 41 5f 4e 41 4d 45 0c    21 00 c0 00 00 00 fd 01' // MA_NAME.!.......
+        '00 00 00 00 05 00 00 03    fe 00 00 22 00 13 00 00' // ..........."....
         '04 12 69 6e 66 6f 72 6d    61 74 69 6f 6e 5f 73 63' // ..information_sc
         '68 65 6d 61 06 00 00 05    05 6d 79 73 71 6c 13 00' // hema.....mysql..
         '00 06 12 70 65 72 66 6f    72 6d 61 6e 63 65 5f 73' // ...performance_s
         '63 68 65 6d 61 04 00 00    07 03 73 79 73 05 00 00' // chema.....sys...
-        '08 04 74 65 73 74 05 00    00 09 fe 00 00 22 00' //     ..test....�..".
+        '08 04 74 65 73 74 05 00    00 09 fe 00 00 22 00' //     ..test.......".
         );
     final rs = ResultSet.parse(InputStream.from(rsbytes));
     expect(
@@ -44,10 +44,10 @@ main() {
     final bytes = bytesFromHexed(''
         '01 00 00 01 01 27 00 00    02 03 64 65 66 00 00 00' // .....'....def...
         '11 40 40 76 65 72 73 69    6f 6e 5f 63 6f 6d 6d 65' // .@@version_comme
-        '6e 74 00 0c 21 00 54 00    00 00 fd 00 00 1f 00 00' // nt..!.T...�.....
-        '05 00 00 03 fe 00 00 02    00 1d 00 00 04 1c 4d 79' // ....�.........My
+        '6e 74 00 0c 21 00 54 00    00 00 fd 00 00 1f 00 00' // nt..!.T.........
+        '05 00 00 03 fe 00 00 02    00 1d 00 00 04 1c 4d 79' // ..............My
         '53 51 4c 20 43 6f 6d 6d    75 6e 69 74 79 20 53 65' // SQL Community Se
-        '72 76 65 72 20 28 47 50    4c 29 05 00 00 05 fe 00' // rver (GPL)....�.
+        '72 76 65 72 20 28 47 50    4c 29 05 00 00 05 fe 00' // rver (GPL)......
         '00 02 00' //                                           ...
         );
 
@@ -78,10 +78,10 @@ main() {
         '0b 54 41 42 4c 45 5f 4e    41 4d 45 53 0b 54 41 42' // .TABLE_NAMES.TAB
         '4c 45 5f 4e 41 4d 45 53    0e 54 61 62 6c 65 73 5f' // LE_NAMES.Tables_
         '69 6e 5f 74 65 73 74 0a    54 41 42 4c 45 5f 4e 41' // in_test.TABLE_NA
-        '4d 45 0c 21 00 c0 00 00    00 fd 01 00 00 00 00 05' // ME.!.�...�......
-        '00 00 03 fe 00 00 22 00    04 00 00 04 03 66 6f 6f' // ...�.."......foo
+        '4d 45 0c 21 00 c0 00 00    00 fd 01 00 00 00 00 05' // ME.!............
+        '00 00 03 fe 00 00 22 00    04 00 00 04 03 66 6f 6f' // ......"......foo
         '06 00 00 05 05 74 61 62    6c 65 06 00 00 06 05 74' // .....table.....t
-        '79 70 65 73 05 00 00 07    fe 00 00 22 00' //          ypes....�..".
+        '79 70 65 73 05 00 00 07    fe 00 00 22 00' //          ypes.......".
         );
 
     final rs = ResultSet.parse(InputStream.from(bytes));
@@ -258,5 +258,89 @@ main() {
     expect(rs.rows[3][2].value, 252);
 
     expect(rs.encode(), bytes);
+  });
+
+  test('FieldListResponseTest', () {
+    final bytes = bytesFromHexed(''
+        '31 00 00 01 03 64 65 66    04 74 65 73 74 05 74 61' // 1....def.test.ta
+        '62 6c 65 05 74 61 62 6c    65 06 63 6f 6c 75 6d 6e' // ble.table.column
+        '06 63 6f 6c 75 6d 6e 0c    21 00 2c 01 00 00 fd 00' // .column.!.,.....
+        '00 00 00 00 fb 05 00 00    02 fe 00 00 02 00' //       ..............
+        );
+    // desc `table`;
+    // +--------+--------------+------+-----+---------+-------+
+    // | Field  | Type         | Null | Key | Default | Extra |
+    // +--------+--------------+------+-----+---------+-------+
+    // | column | varchar(100) | YES  |     | NULL    |       |
+    // +--------+--------------+------+-----+---------+-------+
+    final cd = ColumnDefinition.parse(
+        Packet.parse(InputStream.from(bytes)).inputStream, true);
+    expect(cd.catalog, 'def');
+    expect(cd.schema, 'test');
+    expect(cd.table, 'table');
+    expect(cd.orgTable, 'table');
+    expect(cd.name, 'column');
+    expect(cd.columnType, Field.typeVarString);
+
+    final i1 = InputStream.from(bytes);
+    final fds = FieldListResponse.parse(i1);
+    expect(fds.defs.length, 1);
+    expect(i1.byteLeft, 0);
+  });
+
+  test('MultipleCDFieldListResponseTest', () {
+    final bytes = bytesFromHexed(''
+        '27 00 00 01 03 64 65 66    04 74 65 73 74 03 66 6f' // '....def.test.fo
+        '6f 03 66 6f 6f 03 62 61    72 03 62 61 72 0c 21 00' // o.foo.bar.bar.!.
+        'f4 02 00 00 fd 00 00 00    00 00 fb 27 00 00 02 03' // ...........'....
+        '64 65 66 04 74 65 73 74    03 66 6f 6f 03 66 6f 6f' // def.test.foo.foo
+        '03 7a 65 67 03 7a 65 67    0c 21 00 f1 02 00 00 fd' // .zeg.zeg.!......
+        '00 00 00 00 00 fb 27 00    00 03 03 64 65 66 04 74' // ......'....def.t
+        '65 73 74 03 66 6f 6f 03    66 6f 6f 03 6d 65 64 03' // est.foo.foo.med.
+        '6d 65 64 0c 3f 00 0b 00    00 00 03 00 00 00 00 00' // med.?...........
+        'fb 05 00 00 04 fe 00 00    02 00' //                   ..........
+        );
+    // desc foo;
+    // +-------+--------------+------+-----+---------+-------+
+    // | Field | Type         | Null | Key | Default | Extra |
+    // +-------+--------------+------+-----+---------+-------+
+    // | bar   | varchar(252) | YES  |     | NULL    |       |
+    // | zeg   | varchar(251) | YES  |     | NULL    |       |
+    // | med   | int(11)      | YES  |     | NULL    |       |
+    // +-------+--------------+------+-----+---------+-------+
+    final i1 = InputStream.from(bytes);
+    final fds = FieldListResponse.parse(i1);
+    expect(fds.defs.length, 3);
+    expect(i1.byteLeft, 0);
+
+    expect(fds.encode(), bytes);
+  });
+
+  test('CDWithDefaultValueFieldListResponseTest', () {
+    final bytes = bytesFromHexed(''
+        '27 00 00 01 03 64 65 66    04 74 65 73 74 03 66 6f' // '....def.test.fo
+        '6f 03 66 6f 6f 03 62 61    72 03 62 61 72 0c 21 00' // o.foo.bar.bar.!.
+        'f4 02 00 00 fd 00 00 00    00 00 fb 2b 00 00 02 03' // ...........+....
+        '64 65 66 04 74 65 73 74    03 66 6f 6f 03 66 6f 6f' // def.test.foo.foo
+        '03 7a 65 67 03 7a 65 67    0c 21 00 f1 02 00 00 fd' // .zeg.zeg.!......
+        '00 00 00 00 00 04 7a 65    65 65 27 00 00 03 03 64' // ......zeee'....d
+        '65 66 04 74 65 73 74 03    66 6f 6f 03 66 6f 6f 03' // ef.test.foo.foo.
+        '6d 65 64 03 6d 65 64 0c    3f 00 0b 00 00 00 03 00' // med.med.?.......
+        '00 00 00 00 fb 05 00 00    04 fe 00 00 02 00' //       ..............
+        );
+    // mysql> desc foo;
+    // +-------+--------------+------+-----+---------+-------+
+    // | Field | Type         | Null | Key | Default | Extra |
+    // +-------+--------------+------+-----+---------+-------+
+    // | bar   | varchar(252) | YES  |     | NULL    |       |
+    // | zeg   | varchar(251) | YES  |     | zeee    |       |
+    // | med   | int(11)      | YES  |     | NULL    |       |
+    // +-------+--------------+------+-----+---------+-------+
+    final i1 = InputStream.from(bytes);
+    final fds = FieldListResponse.parse(i1);
+    expect(fds.defs.length, 3);
+    expect(i1.byteLeft, 0);
+
+    expect(fds.encode(), bytes);
   });
 }

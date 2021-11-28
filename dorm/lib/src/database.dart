@@ -3,7 +3,7 @@ part of dorm;
 ///
 class Session {
   final DbUri uri;
-  Future<Connection> _connection;
+  final Future<Connection> _connection;
 
   Session(this.uri) : _connection = create(uri);
 

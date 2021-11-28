@@ -1,7 +1,7 @@
 part of mysql.impl;
 
 ///
-class ColumnDefinition {
+class ColumnDefinition extends Packet {
   final String catalog;
   final String schema;
   final String table;
@@ -20,26 +20,27 @@ class ColumnDefinition {
   final int decimals;
   final int filler;
 
-  // COM_FIELD_LIST
-  int? defaultValueLength;
-  String? defaultValue;
+  /// in COM_FIELD_LIST, defaultValue used.
+  /// Split a new class is too expensive
+  final bool inComFieldList;
+  final String? defaultValue;
 
   ColumnDefinition({
-    required this.catalog,
+    this.catalog = 'def',
     required this.schema,
     required this.table,
     required this.orgTable,
     required this.name,
     required this.orgName,
     this.nextLength = 0x0c,
-    required this.charset,
+    this.charset = Charset.utf8,
     required this.columnLength,
     required this.columnType,
     this.flags = 0,
     this.decimals = 0,
     this.filler = 0,
-    this.defaultValueLength,
     this.defaultValue,
+    this.inComFieldList = false,
   });
 
   ColumnDefinition apply({
@@ -67,21 +68,24 @@ class ColumnDefinition {
         decimals: decimals ?? this.decimals,
       );
 
-  factory ColumnDefinition.varString(
-          String table, String name, int columnLength) =>
+  factory ColumnDefinition.varString({
+    String schema = '',
+    required String table,
+    required String name,
+    required int columnLength,
+  }) =>
       ColumnDefinition(
-        catalog: 'def',
-        schema: '',
+        schema: schema,
         table: table,
         orgTable: table,
         name: name,
         orgName: name,
-        charset: Charset.utf8,
         columnLength: columnLength,
         columnType: Field.typeVarString,
         decimals: 31,
       );
 
+  @override
   Uint8List encode([OutputStream? out]) {
     out ??= OutputStream();
     out.writeLengthEncodedString(catalog);
@@ -98,28 +102,40 @@ class ColumnDefinition {
     out.write8(decimals);
     out.write16(filler);
 
-    if (defaultValue != null && defaultValueLength != null) {
-      out.writeLength(defaultValueLength!);
-      out.writeString(defaultValue!);
+    // if command was COM_FIELD_LIST
+    if (inComFieldList) {
+      int sz = (defaultValue ?? '').length;
+      out.writeFieldLength(sz);
+      out.writeString(defaultValue ?? '');
     }
     return out.finished();
   }
 
-  factory ColumnDefinition.parse(InputStream input) => ColumnDefinition(
-        catalog: input.readLengthEncodedString(),
-        schema: input.readLengthEncodedString(),
-        table: input.readLengthEncodedString(),
-        orgTable: input.readLengthEncodedString(),
-        name: input.readLengthEncodedString(),
-        orgName: input.readLengthEncodedString(),
-        nextLength: input.readu8(),
-        charset: input.readu16(),
-        columnLength: input.readu32(),
-        columnType: input.readu8(),
-        flags: input.readu16(),
-        decimals: input.readu8(),
-        filler: input.readu16(),
-      );
+  factory ColumnDefinition.parse(InputStream input,
+      [bool inComFieldList = false]) {
+    final cd = ColumnDefinition(
+      catalog: input.readLengthEncodedString(),
+      schema: input.readLengthEncodedString(),
+      table: input.readLengthEncodedString(),
+      orgTable: input.readLengthEncodedString(),
+      name: input.readLengthEncodedString(),
+      orgName: input.readLengthEncodedString(),
+      nextLength: input.readu8(),
+      charset: input.readu16(),
+      columnLength: input.readu32(),
+      columnType: input.readu8(),
+      flags: input.readu16(),
+      decimals: input.readu8(),
+      filler: input.readu16(),
+      inComFieldList: inComFieldList,
+      defaultValue: inComFieldList ? input.readLengthEncodedString() : null,
+    );
+
+    if (inComFieldList) {
+      assert(input.byteLeft == 0);
+    }
+    return cd;
+  }
 }
 
 typedef Row = List<Field>;

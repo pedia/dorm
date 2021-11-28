@@ -8,6 +8,8 @@ class CommandPacket extends Packet {
   factory CommandPacket.parse(InputStream input) {
     final cmd = Command.values[input.readu8()];
     switch (cmd) {
+      case Command.quit:
+        return QuitCommand(cmd);
       case Command.query:
       case Command.initDb:
       case Command.stmtPrepare:
@@ -18,7 +20,12 @@ class CommandPacket extends Packet {
         throw UnimplementedError('TODO: $cmd');
     }
   }
+
+  @override
+  String toString() => 'CommandPacket($command)';
 }
+
+typedef QuitCommand = CommandPacket;
 
 class QueryCommand extends CommandPacket {
   final String sql;
@@ -36,7 +43,13 @@ class QueryCommand extends CommandPacket {
   }
 
   factory QueryCommand.parse(Command command, InputStream input) =>
-      QueryCommand(command: command, sql: input.readEofString());
+      QueryCommand(
+        command: command,
+        sql: input.readEofString(),
+      );
+
+  @override
+  String toString() => 'QueryCommand("$sql")';
 }
 
 ///
@@ -61,6 +74,39 @@ class FieldListCommand extends CommandPacket {
         table: input.readCString(),
         fieldWildcard: input.readEofString(),
       );
+
+  @override
+  String toString() => 'FieldListCommand($table, $fieldWildcard)';
+}
+
+class FieldListResponse extends Packet {
+  final List<ColumnDefinition> defs;
+  FieldListResponse(this.defs);
+
+  @override
+  Uint8List encode() {
+    final out = OutputStream();
+    int i = 1;
+
+    for (var cd in defs) {
+      out.write(Packet.build(i++, cd).encode());
+    }
+    out.write(Packet.build(i++, EofPacket(0)).encode());
+    return out.finished();
+  }
+
+  factory FieldListResponse.parse(InputStream input) {
+    final defs = <ColumnDefinition>[];
+    while (input.byteLeft > 0) {
+      final p = Packet.parse(input);
+      if (p.body != null) {
+        defs.add(ColumnDefinition.parse(p.inputStream, true));
+      } else {
+        assert(p is EofPacket);
+      }
+    }
+    return FieldListResponse(defs);
+  }
 }
 
 class CursorType {

@@ -118,7 +118,8 @@ class Client {
       bool logined = server.validate(sa.user, rnd, sa.scramble);
       clientCapability = sa.clientFlag;
       if (verbose) {
-        print('client user: ${sa.user}, db: ${sa.db}, logined: $logined');
+        print('Client $threadId user:${sa.user}, db:${sa.db}, '
+            'logined:$logined');
       }
 
       Packet.build(
@@ -137,16 +138,12 @@ class Client {
       final p = Packet.parse(InputStream.from(data), server.capability);
 
       final cmd = CommandPacket.parse(p.inputStream);
-      if (verbose) print(cmd);
+      if (verbose) print('MySQL got: $cmd');
 
-      if (cmd.command != Command.query) {
-        server.db.handle(cmd).then((answer) {
-          addRaw(Packet.build(p.packetId! + 1, answer).encode());
-        });
-        return;
-      }
-
-      if (cmd.command == Command.query) {
+      if (cmd.command == Command.quit) {
+        socket.destroy();
+        socket.close().then((_) => null);
+      } else if (cmd.command == Command.query) {
         final q = cmd as QueryCommand;
         server.db.query(q.sql).then((rs) {
           addRaw(rs.encode());
@@ -156,6 +153,11 @@ class Client {
           }
           addRaw(ErrorPacket(code: 30000, message: err.toString()).encode());
         });
+      } else {
+        server.db.handle(cmd).then((answer) {
+          addRaw(Packet.build(p.packetId! + 1, answer).encode());
+        });
+        return;
       }
     }
   }
