@@ -8,8 +8,8 @@ import "dart:mirrors";
 import 'package:meta/meta.dart';
 import 'package:collection/collection.dart';
 
-import 'package:galileo_sqljocky5/public/connection/connection.dart' as my;
-import 'package:galileo_sqljocky5/public/results/results.dart' as my;
+import 'package:mysqldb/mysqldb.dart' as my;
+import 'package:mysqldb/impl.dart' as my;
 
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 

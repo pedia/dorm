@@ -30,6 +30,8 @@ class DbUri {
     this.args = const <String, String>{},
   });
 
+  String get address => '$host:$port';
+
   /// Not support escape
   @override
   String toString() => [

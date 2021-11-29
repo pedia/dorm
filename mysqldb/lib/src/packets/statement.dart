@@ -12,10 +12,11 @@ class CommandPacket extends Packet {
         return QuitCommand(cmd);
       case Command.query:
       case Command.initDb:
-      case Command.stmtPrepare:
         return QueryCommand.parse(cmd, input);
       case Command.fieldList:
         return FieldListCommand.parse(input);
+      case Command.stmtPrepare:
+        return PrepareStatement.parse(input);
       default:
         throw UnimplementedError('TODO: $cmd');
     }
@@ -117,8 +118,111 @@ class CursorType {
 }
 
 ///
-class ExecuteStatement extends Packet {
-  final Command command;
+class PrepareStatement extends CommandPacket {
+  final String sql;
+  PrepareStatement({required this.sql}) : super(Command.stmtPrepare);
+
+  @override
+  Uint8List encode() {
+    final out = OutputStream();
+    out.write8(command.index);
+    out.writeString(sql);
+    return out.finished();
+  }
+
+  factory PrepareStatement.parse(InputStream input) => PrepareStatement(
+        sql: input.readEofString(),
+      );
+
+  @override
+  String toString() => 'PrepareStatement("$sql")';
+}
+
+class PrepareStatementResponse extends Packet {
+  final int status;
+  final int stmtId;
+  final int numColumns;
+  final int numParams;
+  final int reserved1;
+  final int warningCount;
+  final List<ColumnDefinition> cols;
+  final List<ColumnDefinition> params;
+
+  PrepareStatementResponse({
+    required this.status,
+    required this.stmtId,
+    this.numColumns = 0,
+    this.numParams = 0,
+    this.reserved1 = 0,
+    this.warningCount = 0,
+    this.params = const <ColumnDefinition>[],
+    this.cols = const <ColumnDefinition>[],
+  }) : assert(numColumns == 0 || numParams == 0);
+
+  @override
+  Uint8List encode() {
+    final out = OutputStream();
+    out.write8(status);
+    out.write32(stmtId);
+    out.write16(numColumns);
+    out.write16(numParams);
+    out.write8(reserved1);
+    out.write16(warningCount);
+
+    for (final p in params) {
+      p.encode(out);
+    }
+    out.write(Packet.build(0, EofPacket(0)).encode());
+
+    for (final p in cols) {
+      p.encode(out);
+    }
+    out.write(Packet.build(0, EofPacket(0)).encode());
+    return out.finished();
+  }
+
+  factory PrepareStatementResponse.parse(InputStream input) {
+    final status = input.readu8();
+    final stmtId = input.readu32();
+    final numColumns = input.readu16();
+    final numParams = input.readu16();
+    final reserved1 = input.readu8();
+    final warningCount = input.readu16();
+
+    final params = <ColumnDefinition>[];
+    for (int i = 0; i < numParams; ++i) {
+      final p = Packet.parse(input);
+      if (p.body != null) {
+        params.add(ColumnDefinition.parse(p.inputStream, true));
+      } else {
+        assert(p is EofPacket);
+      }
+    }
+
+    final cols = <ColumnDefinition>[];
+    for (int i = 0; i < numColumns; ++i) {
+      final p = Packet.parse(input);
+      if (p.body != null) {
+        cols.add(ColumnDefinition.parse(p.inputStream, true));
+      } else {
+        assert(p is EofPacket);
+      }
+    }
+    return PrepareStatementResponse(
+      status: status,
+      stmtId: stmtId,
+      numColumns: numColumns,
+      numParams: numParams,
+      reserved1: reserved1,
+      warningCount: warningCount,
+      params: params,
+      cols: cols,
+    );
+  }
+}
+
+///
+class ExecuteStatement extends CommandPacket {
   final int stmtId;
   final int flags; // cursor type
   final int iterationCount;
@@ -126,13 +230,12 @@ class ExecuteStatement extends Packet {
   final int newParamsBoundFlag;
 
   ExecuteStatement({
-    this.command = Command.stmtExecute,
     required this.stmtId,
     required this.flags,
     this.iterationCount = 1,
     required this.numParams,
     required this.newParamsBoundFlag,
-  });
+  }) : super(Command.stmtExecute);
 
   @override
   Uint8List encode() {

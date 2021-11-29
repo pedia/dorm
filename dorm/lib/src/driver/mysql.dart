@@ -16,24 +16,23 @@ part of dorm;
 // ) ENGINE=InnoDB AUTO_INCREMENT=287 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 class MysqlConnection implements Connection {
-  final my.MySqlConnection db;
+  final my.Client db;
   MysqlConnection(this.db);
 
   static Future<Connection> create(DbUri uri) async {
     return MysqlConnection(
-      await my.MySqlConnection.connect(my.ConnectionSettings(
-        user: uri.user,
-        password: uri.password,
-        host: uri.host,
-        port: uri.port ?? 3306,
+      await my.Client.connect(
+        user: uri.user!,
+        password: uri.password!,
+        address: uri.address,
         db: uri.database,
-      )),
+      ),
     );
   }
 
   @override
   Future<int> execute(String sql, [List<Object> parameters = const []]) async {
-    final ir = await db.prepared(sql, parameters.cast<dynamic>());
+    final ir = await db.query(sql, parameters.cast<dynamic>());
     return ir.affectedRows ?? 0;
   }
 
@@ -52,7 +51,7 @@ class MysqlConnection implements Connection {
 }
 
 class _MyResultSet extends ResultSet {
-  final my.Results inner;
+  final my.ResultSet inner;
   _MyResultSet(this.inner) : super(inner.fields.map((f) => f.name!).toList());
 
   @override

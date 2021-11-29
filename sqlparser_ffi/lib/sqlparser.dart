@@ -11,8 +11,8 @@ export 'statement.dart';
 ///
 class SqlParser {
   static String libPath() {
-    final cjsonExamplePath = Directory.current.absolute.path;
-    var path = p.join(cjsonExamplePath, 'rslib/target/debug');
+    var path = p.join(Directory.current.absolute.path,
+        bool.fromEnvironment('dart.vm.product') ? '' : 'rslib/target/debug');
     if (Platform.isMacOS) {
       path = p.join(path, 'libsqlparser_ffi.dylib');
     } else if (Platform.isWindows) {
