@@ -80,9 +80,17 @@ main() {
         '1200 0000 1701 0000    0000 01 00 00 00 00 01' // ................
         '0f 00 03 66 6f 6f' //                             ...foo
         );
-    // final p = CommandPacket.parse(InputStream.from(e));
+    final psr = PrepareStatementResponse(
+      status: 0,
+      stmtId: 1,
+      params: [
+        ColumnDefinition.varString(table: 'table', name: '', columnLength: 81)
+      ],
+      cols: [],
+    );
+    final p = CommandPacket.parse(InputStream.from(e));
 
-    // final q = ExecuteStatement.parse(p.inputStream);
+    final es = ExecuteStatement.parse(p.inputStream, psr);
     // expect(q.command, Command.stmtExecute);
   });
 }
