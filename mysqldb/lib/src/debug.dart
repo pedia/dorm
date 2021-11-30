@@ -44,6 +44,22 @@ String hexed(Uint8List data) {
   return lines.join('\n');
 }
 
+Uint8List bytesFromHexed(String s) {
+  final out = <int>[];
+  for (int i = 0; i < s.length; ++i) {
+    var char = s[i];
+    if (char == ' ' || char == '\n') continue;
+
+    char += s[i++ + 1];
+
+    int v = int.parse(char, radix: 16);
+    out.add(v);
+  }
+  return Uint8List.fromList(out);
+}
+
+///
 bool verbose = true;
 
+///
 bool debug = true;

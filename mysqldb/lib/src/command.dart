@@ -24,7 +24,7 @@ enum Command {
   tableDump, // 19 0x13
   connectOut,
   registerSlave,
-  stmtPrepare,
+  stmtPrepare, // 22 0x16
   stmtExecute,
   stmtSendLongData,
   stmtClose,

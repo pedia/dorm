@@ -10,7 +10,12 @@ class Packet {
   factory Packet.build(int packetId, Packet inner) =>
       Packet(packetId, inner.encode());
 
-  InputStream get inputStream => InputStream.from(body!);
+  // Should cache InputStream
+  InputStream? _inputStream;
+  InputStream get inputStream {
+    _inputStream ??= InputStream.from(body!);
+    return _inputStream!;
+  }
 
   ///
   void sendTo(IOSink sink) {

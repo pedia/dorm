@@ -157,57 +157,67 @@ class PrepareStatementResponse extends Packet {
     this.warningCount = 0,
     this.params = const <ColumnDefinition>[],
     this.cols = const <ColumnDefinition>[],
-  }) : assert(numColumns == 0 || numParams == 0);
+  });
 
   @override
   Uint8List encode() {
+    int pid = 1;
     final out = OutputStream();
-    out.write8(status);
-    out.write32(stmtId);
-    out.write16(numColumns);
-    out.write16(numParams);
-    out.write8(reserved1);
-    out.write16(warningCount);
-
-    for (final p in params) {
-      p.encode(out);
+    {
+      final sub = OutputStream();
+      sub.write8(status);
+      sub.write32(stmtId);
+      sub.write16(numColumns);
+      sub.write16(numParams);
+      sub.write8(reserved1);
+      sub.write16(warningCount);
+      out.write(Packet(pid++, sub.finished()).encode());
     }
-    out.write(Packet.build(0, EofPacket(0)).encode());
 
-    for (final p in cols) {
-      p.encode(out);
+    if (params.isNotEmpty) {
+      for (final p in params) {
+        out.write(Packet(pid++, p.encode()).encode());
+      }
+      out.write(Packet.build(pid++, EofPacket(0)).encode());
     }
-    out.write(Packet.build(0, EofPacket(0)).encode());
+    if (cols.isNotEmpty) {
+      for (final p in cols) {
+        out.write(Packet(pid++, p.encode()).encode());
+      }
+      out.write(Packet.build(pid++, EofPacket(0)).encode());
+    }
     return out.finished();
   }
 
   factory PrepareStatementResponse.parse(InputStream input) {
-    final status = input.readu8();
-    final stmtId = input.readu32();
-    final numColumns = input.readu16();
-    final numParams = input.readu16();
-    final reserved1 = input.readu8();
-    final warningCount = input.readu16();
+    final p0 = Packet.parse(input);
+    final status = p0.inputStream.readu8();
+    final stmtId = p0.inputStream.readu32();
+    final numColumns = p0.inputStream.readu16();
+    final numParams = p0.inputStream.readu16();
+    final reserved1 = p0.inputStream.readu8();
+    final warningCount = p0.inputStream.readu16();
 
     final params = <ColumnDefinition>[];
-    for (int i = 0; i < numParams; ++i) {
-      final p = Packet.parse(input);
-      if (p.body != null) {
-        params.add(ColumnDefinition.parse(p.inputStream, true));
-      } else {
-        assert(p is EofPacket);
+    if (numParams > 0) {
+      for (int i = 0; i < numParams; ++i) {
+        final p = Packet.parse(input);
+        params.add(ColumnDefinition.parse(p.inputStream));
       }
+      final eof1 = Packet.parse(input);
+      assert(eof1 is EofPacket);
     }
 
     final cols = <ColumnDefinition>[];
-    for (int i = 0; i < numColumns; ++i) {
-      final p = Packet.parse(input);
-      if (p.body != null) {
-        cols.add(ColumnDefinition.parse(p.inputStream, true));
-      } else {
-        assert(p is EofPacket);
+    if (numColumns > 0) {
+      for (int i = 0; i < numColumns; ++i) {
+        final p = Packet.parse(input);
+        cols.add(ColumnDefinition.parse(p.inputStream));
       }
+      final eof2 = Packet.parse(input);
+      assert(eof2 is EofPacket);
     }
+
     return PrepareStatementResponse(
       status: status,
       stmtId: stmtId,

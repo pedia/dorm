@@ -1,7 +1,7 @@
 import 'package:mysqldb/impl.dart';
+import 'package:mysqldb/src/debug.dart';
 
 import 'package:test/test.dart';
-import 'hexstring.dart';
 
 main() {
   test('QueryTest', () {
@@ -38,7 +38,7 @@ main() {
     // 07 00 00 01 00 00 00 02    00 00 00
   });
 
-  test('PrepareTest', () {
+  test('PrepareResponseTest', () {
     final bytes = bytesFromHexed(''
         '0c 00 00 01 00 01 00 00    00 01 00 02 00 00 00 00' // ................
         '17 00 00 02 03 64 65 66    00 00 00 01 3f 00 0c 3f' // .....def....?..?
@@ -49,9 +49,30 @@ main() {
         '0c 3f 00 00 00 00 00 fd    80 00 1f 00 00 05 00 00' // .?..............
         '06 fe 00 00 02 00' //                                   ......
         );
-    final p = PrepareStatementResponse.parse(
-        Packet.parse(InputStream.from(bytes)).inputStream);
-    expect(p.status, 0);
+    final res = PrepareStatementResponse.parse(InputStream.from(bytes));
+    expect(res.status, 0);
+    expect(res.stmtId, 1);
+    expect(res.numColumns, 1);
+    expect(res.numParams, 2);
+    expect(res.warningCount, 0);
+    expect(res.params[0].name, '?');
+    expect(res.params[0].columnType, Field.typeVarString);
+    expect(res.params[0].flags, 128); // ?
+
+    expect(res.params[1].name, '?');
+
+    expect(res.cols[0].name, 'col1');
+    expect(res.encode(), bytes);
+
+    // an empty response
+    final bytes2 = bytesFromHexed(''
+        '0c 00 00 01 00 01 00 00    00 00 00 00 00 00 00 00');
+    final psr2 = PrepareStatementResponse.parse(InputStream.from(bytes2));
+    expect(psr2.status, 0);
+    expect(psr2.stmtId, 1);
+    expect(psr2.numColumns, 0);
+    expect(psr2.numParams, 0);
+    expect(psr2.encode(), bytes2);
   });
 
   // 0c00 0000 0373 686f 7720 7461 626c 6573   .....show tables

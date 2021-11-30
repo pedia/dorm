@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:mysqldb/impl.dart';
 import 'package:mysqldb/src/flag.dart';
 
-import 'hexstring.dart';
 import 'package:mysqldb/src/debug.dart';
 import 'package:test/test.dart';
 
@@ -11,6 +10,11 @@ main() {
   test('HexedStringTest', () {
     expect(bytesFromHexed('4b54 1815'), [0x4b, 0x54, 0x18, 0x15]);
     expect(bytesFromHexed('4b541815'), [0x4b, 0x54, 0x18, 0x15]);
+  });
+
+  test('PacketInstreamTest', () {
+    final p = Packet(1, Uint8List.fromList([]));
+    expect(identical(p.inputStream, p.inputStream), isTrue);
   });
 
   test('mysql-5.8-authentication-test', () {
