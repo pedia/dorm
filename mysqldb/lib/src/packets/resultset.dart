@@ -227,7 +227,8 @@ class ResultSet extends Packet {
       final fe = input.peek();
       if (fe != 0xfe) {
         for (int c = 0; c < columCount; ++c) {
-          final field = Field.parse(input, columns[c]);
+          final field =
+              Field.parse(input, columns[c].columnType, columns[c].decimals);
           fields.add(field);
         }
       } else {

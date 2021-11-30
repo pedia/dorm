@@ -33,15 +33,17 @@ class Field {
   static const int nullValue = 0xfb;
 
   final dynamic value;
-  final ColumnDefinition def;
+  final int type;
 
   /// Width of value to String.
   final int? width;
 
-  Field({this.value, this.width, required this.def});
+  final int? decimals;
+
+  Field({this.value, this.width, required this.type, this.decimals});
 
   factory Field.string(String? value, ColumnDefinition def) =>
-      Field(value: value, def: def);
+      Field(value: value, type: typeVarString);
 
   Uint8List encode([OutputStream? out]) {
     out ??= OutputStream();
@@ -49,7 +51,7 @@ class Field {
     if (value == null) {
       out.write8(nullValue);
     } else {
-      switch (def.columnType) {
+      switch (type) {
         case typeTiny:
         case typeShort:
         case typeLong:
@@ -65,7 +67,7 @@ class Field {
         case typeFloat:
         case typeDouble:
           final buf = Uint8List.fromList(
-              utf8.encode((value as num).toStringAsFixed(def.decimals)));
+              utf8.encode((value as num).toStringAsFixed(decimals!)));
           out.writeFieldLength(buf.length);
           out.write(buf);
           break;
@@ -116,13 +118,13 @@ class Field {
           }
           break;
         default:
-          throw Exception('FieldType ${def.columnType} is unknown');
+          throw Exception('FieldType $type is unknown');
       }
     }
     return out.finished();
   }
 
-  factory Field.parse(InputStream input, ColumnDefinition def) {
+  factory Field.parse(InputStream input, int fieldType, [int? decimals]) {
     // Difference between NULL(null String) and ''(empty String):
     //  in the byte of `length`:
     //    0xfb -> NULL
@@ -132,12 +134,12 @@ class Field {
 
     if (force == nullValue) {
       input.skip(1);
-      return Field(value: null, width: 4, def: def);
+      return Field(value: null, width: 4, type: fieldType);
     }
 
     final len = input.readLength();
     final bytes = input.read(len);
-    switch (def.columnType) {
+    switch (fieldType) {
       case typeTiny:
       case typeShort:
       case typeLong:
@@ -148,7 +150,7 @@ class Field {
         return Field(
           value: int.parse(s),
           width: s.length,
-          def: def,
+          type: fieldType,
         );
       case typeNewdecimal:
       case typeFloat:
@@ -157,14 +159,15 @@ class Field {
         return Field(
           value: double.parse(s),
           width: s.length,
-          def: def,
+          type: fieldType,
+          decimals: decimals,
         );
       case typeBit:
         int v = 0;
         for (int n in bytes) {
           v = (v << 8) + n;
         }
-        return Field(value: v, width: 8, def: def);
+        return Field(value: v, width: 8, type: fieldType);
       case typeDate:
       case typeDatetime:
       case typeTimestamp:
@@ -172,7 +175,7 @@ class Field {
         return Field(
           value: DateTime.parse(s),
           width: s.length,
-          def: def,
+          type: fieldType,
         );
       case typeTime:
         final arr = utf8.decode(bytes).split(':');
@@ -181,22 +184,22 @@ class Field {
           minutes: int.parse(arr[0]),
           seconds: int.parse(arr[0]),
         );
-        return Field(value: d, width: 8, def: def);
+        return Field(value: d, width: 8, type: fieldType);
       case typeString:
       case typeVarString:
       case typeGeometry:
         if (force == 0) {
-          return Field(value: '', width: 0, def: def);
+          return Field(value: '', width: 0, type: fieldType);
         }
         final s = utf8.decode(bytes);
-        return Field(value: s, width: s.length, def: def);
+        return Field(value: s, width: s.length, type: fieldType);
       case typeBlob:
         if (force == 0) {
-          return Field(value: Uint8List(0), width: 0, def: def);
+          return Field(value: Uint8List(0), width: 0, type: fieldType);
         }
-        return Field(value: bytes, width: bytes.length * 2, def: def);
+        return Field(value: bytes, width: bytes.length * 2, type: fieldType);
       default:
-        throw Exception('FieldType ${def.columnType} is unknown, $bytes');
+        throw Exception('FieldType $fieldType is unknown, $bytes');
     }
   }
 
@@ -206,7 +209,7 @@ class Field {
       return 'NULL';
     }
 
-    switch (def.columnType) {
+    switch (type) {
       case typeBit:
         // int v = 0;
         // for (int n in bytes) {
@@ -217,7 +220,7 @@ class Field {
         break;
       case typeFloat:
       case typeDouble:
-        return (value as double).toStringAsFixed(def.decimals);
+        return (value as double).toStringAsFixed(decimals!);
       case typeDate:
       case typeDatetime:
         // 2021-11-07 13:32:57.000 to 2021-11-07 13:32:57

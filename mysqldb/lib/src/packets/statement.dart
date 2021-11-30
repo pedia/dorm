@@ -17,6 +17,8 @@ class CommandPacket extends Packet {
         return FieldListCommand.parse(input);
       case Command.stmtPrepare:
         return PrepareStatement.parse(input);
+      case Command.stmtExecute:
+      // TODO: return ExecuteStatement.parse(input);
       default:
         throw UnimplementedError('TODO: $cmd');
     }
@@ -108,13 +110,6 @@ class FieldListResponse extends Packet {
     }
     return FieldListResponse(defs);
   }
-}
-
-class CursorType {
-  static const int noCursor = 0x00;
-  static const int readOnly = 0x01;
-  static const int forUpdate = 0x02;
-  static const int scrollable = 0x04;
 }
 
 ///
@@ -231,20 +226,27 @@ class PrepareStatementResponse extends Packet {
   }
 }
 
+class CursorType {
+  static const int noCursor = 0x00;
+  static const int readOnly = 0x01;
+  static const int forUpdate = 0x02;
+  static const int scrollable = 0x04;
+}
+
 ///
 class ExecuteStatement extends CommandPacket {
   final int stmtId;
-  final int flags; // cursor type
+  final int cursorType; // flags
   final int iterationCount;
-  final int numParams;
   final int newParamsBoundFlag;
+  final List<Field> values;
 
   ExecuteStatement({
     required this.stmtId,
-    required this.flags,
+    this.cursorType = CursorType.noCursor,
     this.iterationCount = 1,
-    required this.numParams,
-    required this.newParamsBoundFlag,
+    this.newParamsBoundFlag = 1,
+    required this.values,
   }) : super(Command.stmtExecute);
 
   @override
@@ -252,19 +254,81 @@ class ExecuteStatement extends CommandPacket {
     final out = OutputStream();
     out.write8(command.index);
     out.write32(stmtId);
-    out.write8(flags);
+    out.write8(cursorType);
     out.write32(iterationCount);
-    if (numParams > 0) {
-      // write null-bitmap
+    if (values.isNotEmpty) {
+      out.write(createNullMap(values));
     }
-    if (newParamsBoundFlag == 1) {}
+
+    if (newParamsBoundFlag == 1) {
+      for (final v in values) {}
+    }
     return out.finished();
   }
 
-  // factory ExecuteStatement.parse(InputStream input) => ExecuteStatement(
-  //       command: Command.values[input.readu8()],
-  //       stmtId: input.readu32(),
-  //       flags: input.readu8(),
-  //       iterationCount: input.readu32(),
-  //     );
+  static Uint8List createNullMap(List<Object?> values) {
+    var bytes = (values.length + 7) ~/ 8;
+    var nullMap = List<int>.filled(bytes, 0);
+
+    var byte = 0;
+    var bit = 0;
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] == null) {
+        nullMap[byte] = nullMap[byte] + (1 << bit);
+      }
+      bit++;
+      if (bit > 7) {
+        bit = 0;
+        byte++;
+      }
+    }
+
+    return Uint8List.fromList(nullMap);
+  }
+
+  factory ExecuteStatement.parse(
+      InputStream input, PrepareStatementResponse psr) {
+    final stmtId = input.readu32();
+    final cursorType = input.readu8();
+    final iterationCount = input.readu32();
+
+    if (psr.numParams == 0) {
+      // Bytes left are not needed
+      return ExecuteStatement(
+        stmtId: stmtId,
+        cursorType: cursorType,
+        iterationCount: iterationCount,
+        newParamsBoundFlag: 0,
+        values: [],
+      );
+    }
+
+    final values = <Field>[];
+
+    Uint8List nullBitmap = input.read((psr.numParams + 7) ~/ 8);
+
+    for (int i = 0; i < psr.numParams; ++i) {
+      final byte = i ~/ 7;
+      final bit = 1 << (i % 7);
+      bool isNull = nullBitmap[byte] & bit == bit;
+      if (isNull) {
+        values.add(Field(value: null, type: Field.typeNull));
+      } else {
+        final type = input.readu8();
+        final _ = input.readu8();
+        final v = Field.parse(input, type);
+        values.add(v);
+      }
+    }
+
+    return ExecuteStatement(
+      stmtId: stmtId,
+      cursorType: cursorType,
+      iterationCount: iterationCount,
+      newParamsBoundFlag: 0,
+      values: values,
+    );
+  }
 }
+
+class ExecuteStatementResponse extends Packet {}

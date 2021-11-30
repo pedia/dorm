@@ -173,10 +173,10 @@ main() {
     // null string
     expect(rs.rows[0][1].value, isNull);
     expect(rs.rows[0][1].encode(), [0xfb]);
-    expect(rs.rows[0][1].def.columnType, Field.typeVarString);
+    expect(rs.rows[0][1].type, Field.typeVarString);
 
     expect(rs.rows[0][2].value, isNull);
-    expect(rs.rows[0][2].def.columnType, Field.typeString);
+    expect(rs.rows[0][2].type, Field.typeString);
 
     // empty string
     expect(rs.rows[2][1].value, '');
