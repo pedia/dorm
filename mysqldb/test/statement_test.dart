@@ -83,14 +83,14 @@ main() {
     final psr = PrepareStatementResponse(
       status: 0,
       stmtId: 1,
+      numParams: 1,
       params: [
         ColumnDefinition.varString(table: 'table', name: '', columnLength: 81)
       ],
       cols: [],
     );
-    final p = CommandPacket.parse(InputStream.from(e));
 
-    final es = ExecuteStatement.parse(p.inputStream, psr);
-    // expect(q.command, Command.stmtExecute);
+    final es = ExecuteStatement.parse(InputStream.from(e), psr);
+    expect(es.command, Command.stmtExecute);
   });
 }

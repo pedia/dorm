@@ -137,22 +137,23 @@ class PrepareStatementResponse extends Packet {
   final int status;
   final int stmtId;
   final int numColumns;
-  final int numParams;
   final int reserved1;
   final int warningCount;
   final List<ColumnDefinition> cols;
   final List<ColumnDefinition> params;
 
+  int get numParams => params.length;
+
   PrepareStatementResponse({
     required this.status,
     required this.stmtId,
     this.numColumns = 0,
-    this.numParams = 0,
+    int numParams = 0,
     this.reserved1 = 0,
     this.warningCount = 0,
     this.params = const <ColumnDefinition>[],
     this.cols = const <ColumnDefinition>[],
-  });
+  }) : assert(numParams == params.length);
 
   @override
   Uint8List encode() {
@@ -288,9 +289,13 @@ class ExecuteStatement extends CommandPacket {
 
   factory ExecuteStatement.parse(
       InputStream input, PrepareStatementResponse psr) {
-    final stmtId = input.readu32();
-    final cursorType = input.readu8();
-    final iterationCount = input.readu32();
+    final p = Packet.parse(input);
+    final command = p.inputStream.readu8();
+    assert(Command.stmtExecute.index == command);
+    final stmtId = p.inputStream.readu32();
+    assert(stmtId == psr.stmtId);
+    final cursorType = p.inputStream.readu8();
+    final iterationCount = p.inputStream.readu32();
 
     if (psr.numParams == 0) {
       // Bytes left are not needed
@@ -304,20 +309,51 @@ class ExecuteStatement extends CommandPacket {
     }
 
     final values = <Field>[];
+    late int newParamsBoundFlag;
 
-    Uint8List nullBitmap = input.read((psr.numParams + 7) ~/ 8);
+    if (psr.numParams > 0) {
+      Uint8List nullBitmap = p.inputStream.read((psr.numParams + 7) ~/ 8);
+      newParamsBoundFlag = p.inputStream.readu8();
 
-    for (int i = 0; i < psr.numParams; ++i) {
-      final byte = i ~/ 7;
-      final bit = 1 << (i % 7);
-      bool isNull = nullBitmap[byte] & bit == bit;
-      if (isNull) {
-        values.add(Field(value: null, type: Field.typeNull));
-      } else {
-        final type = input.readu8();
-        final _ = input.readu8();
-        final v = Field.parse(input, type);
-        values.add(v);
+      if (newParamsBoundFlag == 1) {
+        for (int i = 0; i < psr.numParams; ++i) {
+          final byte = i ~/ 8;
+          final bit = 1 << (i & 7);
+          bool isNull = nullBitmap[byte] & bit == bit;
+
+          final type = p.inputStream.readu8();
+          p.inputStream.readu8(); // 0
+          switch (type) {
+            case Field.typeNull:
+              values.add(Field(value: null, type: Field.typeNull));
+              break;
+            case Field.typeVarchar:
+              values.add(Field(
+                  value: p.inputStream.readLengthEncodedString(),
+                  type: Field.typeVarString));
+              break;
+            case Field.typeLong:
+              break;
+            case Field.typeLonglong:
+              break;
+            case Field.typeDouble:
+            case Field.typeDecimal:
+              break;
+            case Field.typeDate:
+            case Field.typeDatetime:
+            case Field.typeTime:
+            case Field.typeTimestamp:
+              break;
+            case Field.typeTiny:
+              values.add(
+                  Field(value: p.inputStream.readu8(), type: Field.typeTiny));
+              break;
+            case Field.typeBlob:
+              break;
+            default:
+              break;
+          }
+        }
       }
     }
 
@@ -325,7 +361,7 @@ class ExecuteStatement extends CommandPacket {
       stmtId: stmtId,
       cursorType: cursorType,
       iterationCount: iterationCount,
-      newParamsBoundFlag: 0,
+      newParamsBoundFlag: newParamsBoundFlag,
       values: values,
     );
   }
