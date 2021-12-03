@@ -13,6 +13,8 @@ class CommandPacket extends Packet {
       case Command.query:
       case Command.initDb:
         return QueryCommand.parse(cmd, input);
+      case Command.ping:
+        return PingCommand();
       case Command.fieldList:
         return FieldListCommand.parse(input);
       case Command.stmtPrepare:
@@ -53,6 +55,17 @@ class QueryCommand extends CommandPacket {
 
   @override
   String toString() => 'QueryCommand("$sql")';
+}
+
+///
+class PingCommand extends CommandPacket {
+  PingCommand() : super(Command.ping);
+  @override
+  Uint8List encode() {
+    final out = OutputStream();
+    out.write8(command.index);
+    return out.finished();
+  }
 }
 
 ///
@@ -327,10 +340,9 @@ class ExecuteStatement extends CommandPacket {
             case Field.typeNull:
               values.add(Field(value: null, type: Field.typeNull));
               break;
-            case Field.typeVarchar:
-              values.add(Field(
-                  value: p.inputStream.readLengthEncodedString(),
-                  type: Field.typeVarString));
+            case Field.typeTiny:
+              values.add(
+                  Field(value: p.inputStream.readu8(), type: Field.typeTiny));
               break;
             case Field.typeLong:
               break;
@@ -344,11 +356,13 @@ class ExecuteStatement extends CommandPacket {
             case Field.typeTime:
             case Field.typeTimestamp:
               break;
-            case Field.typeTiny:
-              values.add(
-                  Field(value: p.inputStream.readu8(), type: Field.typeTiny));
-              break;
+
             case Field.typeBlob:
+              break;
+            case Field.typeVarchar:
+              values.add(Field(
+                  value: p.inputStream.readLengthEncodedString(),
+                  type: Field.typeVarString));
               break;
             default:
               break;

@@ -156,6 +156,9 @@ main() {
         );
 
     final rs = ResultSet.parse(InputStream.from(rsbytes));
+    for (final cd in rs.columns) {
+      print('${cd.name} 0x${cd.flags.toRadixString(16)}');
+    }
 
     expect(
       rs.serverStatus,

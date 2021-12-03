@@ -143,19 +143,20 @@ class Client {
       if (cmd.command == Command.quit) {
         socket.destroy();
         socket.close().then((_) => null);
-      } else if (cmd.command == Command.query) {
-        final q = cmd as QueryCommand;
-        server.db.query(q.sql).then((rs) {
-          addRaw(rs.encode());
-        }).catchError((err) {
-          if (verbose) {
-            print('query ${q.sql} failed: $err');
-          }
-          addRaw(ErrorPacket(code: 30000, message: err.toString()).encode());
-        });
       } else {
         server.db.handle(cmd).then((answer) {
-          addRaw(Packet.build(p.packetId! + 1, answer).encode());
+          if (answer is ResultSet) {
+            addRaw(answer.encode());
+          } else {
+            addRaw(Packet.build(p.packetId! + 1, answer).encode());
+          }
+        }).catchError((err) {
+          if (verbose) {
+            print('Handle $cmd failed: $err');
+          }
+          addRaw(
+              ErrorPacket(code: 30000, state: '55000', message: err.toString())
+                  .encode());
         });
         return;
       }

@@ -1,5 +1,30 @@
 part of mysql.impl;
 
+/// group_cs_column_definition_flags from mysql_com.h
+class FieldFlag {
+  static const notNullFlag = 0x1; // Field can't be NULL
+  static const priKeyFlag = 0x2; // Field is part of a primary key
+  static const uniqueKeyFlag = 0x4; // Field is part of a unique key
+  static const multipleKeyFlag = 0x8; // Field is part of a key
+  static const blobFlag = 0x10; // Field is a blob
+  static const unsignedFlag = 0x20; // Field is unsigned
+  static const zerofillFlag = 0x40; // Field is zerofill
+  static const binaryFlag = 0x80; // Field is binary
+
+  /// The following are only sent to new clients
+  static const enumFlag = 0x100; // field is an enum
+  static const autoIncrementFlag = 0x200; // field is a autoincrement field
+  static const timestampFlag = 0x400; // Field is a timestamp
+  static const setFlag = 0x800; // field is a set
+  static const noDefaultValueFlag = 0x1000; // Field doesn't have default value
+  static const onUpdateNowFlag = 0x2000; // Field is set to NOW on UPDATE
+  static const numFlag = 0x8000; // Field is num (for clients)
+  // static const partKeyFlag = 16384; // Intern; Part of some key
+  // static const groupFlag = 32768; // Intern: Group field
+  // static const uniqueFlag = 65536; // Intern: Used by sql_yacc
+  // static const bincmpFlag = 131072; // Intern: Used by sql_yacc
+}
+
 ///
 class ColumnDefinition extends Packet {
   final String catalog;
