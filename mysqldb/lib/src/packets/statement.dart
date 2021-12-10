@@ -5,7 +5,8 @@ class CommandPacket extends Packet {
   final Command command;
   CommandPacket(this.command);
 
-  factory CommandPacket.parse(InputStream input) {
+  factory CommandPacket.parse(InputStream input, [Object? arg]) {
+    // TODO: Use peek instead
     final cmd = Command.values[input.readu8()];
     switch (cmd) {
       case Command.quit:
@@ -19,8 +20,10 @@ class CommandPacket extends Packet {
         return FieldListCommand.parse(input);
       case Command.stmtPrepare:
         return PrepareStatement.parse(input);
+      case Command.stmtClose:
+        return CloseStatement.parse(input);
       case Command.stmtExecute:
-      // TODO: return ExecuteStatement.parse(input);
+        return ExecuteStatement.parse(input, arg as PrepareStatementResponse);
       default:
         throw UnimplementedError('TODO: $cmd');
     }
@@ -281,8 +284,8 @@ class ExecuteStatement extends CommandPacket {
   }
 
   static Uint8List createNullMap(List<Object?> values) {
-    var bytes = (values.length + 7) ~/ 8;
-    var nullMap = List<int>.filled(bytes, 0);
+    final bytes = (values.length + 7) ~/ 8;
+    final nullMap = List<int>.filled(bytes, 0);
 
     var byte = 0;
     var bit = 0;
@@ -328,6 +331,8 @@ class ExecuteStatement extends CommandPacket {
       Uint8List nullBitmap = p.inputStream.read((psr.numParams + 7) ~/ 8);
       newParamsBoundFlag = p.inputStream.readu8();
 
+      final types = [];
+
       if (newParamsBoundFlag == 1) {
         for (int i = 0; i < psr.numParams; ++i) {
           final byte = i ~/ 8;
@@ -335,7 +340,12 @@ class ExecuteStatement extends CommandPacket {
           bool isNull = nullBitmap[byte] & bit == bit;
 
           final type = p.inputStream.readu8();
-          p.inputStream.readu8(); // 0
+          p.inputStream.readu8();
+
+          types.add(type);
+        }
+
+        for (final type in types) {
           switch (type) {
             case Field.typeNull:
               values.add(Field(value: null, type: Field.typeNull));
@@ -381,4 +391,179 @@ class ExecuteStatement extends CommandPacket {
   }
 }
 
-class ExecuteStatementResponse extends Packet {}
+/// https://dev.mysql.com/doc/internals/en/binary-protocol-resultset-row.html
+class BinaryRow extends Packet {
+  final List<Object?> values;
+  BinaryRow(this.values);
+
+  factory BinaryRow.parse(InputStream input, List<ColumnDefinition> cds) {
+    final _ = input.readu8();
+    assert(_ == 0);
+    Uint8List nullBitmap = input.read((cds.length + 7 + 2) ~/ 8);
+    final bits = List.generate(cds.length, (i) {
+      // weired +2
+      final byte = (i + 2) ~/ 8;
+      final bit = 1 << ((i + 2) % 8);
+      return nullBitmap[byte] & bit == bit;
+    });
+    final values = <Object?>[];
+
+    for (int i = 0; i < cds.length; ++i) {
+      if (bits[i]) {
+        values.add(null);
+        assert(cds[i].columnType == Field.typeNull);
+        continue;
+      }
+
+      final cd = cds[i];
+      switch (cd.columnType) {
+
+        ///
+        case Field.typeString:
+        case Field.typeVarString:
+          final value = input.readLengthEncodedString();
+          values.add(value);
+          break;
+
+        ///
+        case Field.typeTiny:
+          values.add(input.readu8());
+          break;
+        case Field.typeShort:
+          values.add(input.readu16());
+          break;
+        case Field.typeInt24:
+        case Field.typeLong:
+          values.add(input.readu32());
+          break;
+        case Field.typeLonglong:
+          values.add(input.readu64());
+          break;
+
+        ///
+        case Field.typeFloat:
+          values.add(input.readFloat());
+          break;
+        case Field.typeDouble:
+          values.add(input.readDouble());
+          break;
+
+        ///
+        case Field.typeDate:
+        case Field.typeDatetime:
+        case Field.typeTimestamp:
+          final len = input.readu8();
+          if (len == 4) {
+            final dt = DateTime(
+              input.readu16(),
+              input.readu8(),
+              input.readu8(),
+            );
+            values.add(dt);
+          } else if (len >= 7) {
+            var dt = DateTime(
+              input.readu16(),
+              input.readu8(),
+              input.readu8(),
+              input.readu8(),
+              input.readu8(),
+              input.readu8(),
+            );
+
+            if (len == 11) {
+              final mcs = input.readu32();
+              dt = dt.add(Duration(microseconds: mcs));
+            }
+            values.add(dt);
+          }
+          break;
+
+        ///
+        case Field.typeTime:
+          final len = input.readu8();
+          int days = input.readu32();
+          if (days == 1) days = -days;
+          var d = Duration(
+            days: days,
+            hours: input.readu8(),
+            minutes: input.readu8(),
+            seconds: input.readu8(),
+          );
+
+          if (len > 8) {
+            d += Duration(microseconds: input.readu32());
+          }
+          values.add(d);
+          break;
+
+        default:
+          throw UnimplementedError('BinaryRow value type: ${cd.columnType}');
+      }
+    }
+
+    // assert(input.byteLeft == 0);
+    return BinaryRow(values);
+  }
+}
+
+class BinaryResultSet extends Packet {
+  final List<ColumnDefinition> cds;
+  final List<BinaryRow> rows;
+
+  BinaryResultSet(this.cds, this.rows);
+
+  factory BinaryResultSet.parse(InputStream input) {
+    final cds = <ColumnDefinition>[];
+    final rows = <BinaryRow>[];
+
+    final p0 = Packet.parse(input);
+    if (p0 is EofPacket || p0 is OkPacket) {
+      return BinaryResultSet(cds, rows); // Is this right?
+    }
+
+    /// column define count
+    final columnCount = p0.inputStream.readLength();
+
+    for (int i = 0; i < columnCount; ++i) {
+      final p = Packet.parse(input);
+      cds.add(ColumnDefinition.parse(p.inputStream));
+      assert(p.inputStream.byteLeft == 0);
+    }
+    if (columnCount > 0) {
+      final tail = Packet.parse(input);
+      assert(tail is EofPacket);
+    }
+
+    while (true) {
+      final p2 = Packet.parse(input);
+      if (p2 is EofPacket) break;
+
+      rows.add(BinaryRow.parse(p2.inputStream, cds));
+      assert(p2.inputStream.byteLeft == 0);
+    }
+
+    assert(input.byteLeft == 0);
+    return BinaryResultSet(cds, rows);
+  }
+}
+
+/// Deallocates a prepared statement
+/// No response is sent back to the client.
+class CloseStatement extends CommandPacket {
+  final int stmtId;
+  CloseStatement(this.stmtId) : super(Command.stmtClose);
+
+  @override
+  Uint8List encode() {
+    final out = OutputStream();
+    out.write8(command.index);
+    out.write32(stmtId);
+    return out.finished();
+  }
+
+  factory CloseStatement.parse(InputStream input) {
+    final stmtId = input.readu32();
+    assert(input.byteLeft == 0);
+    return CloseStatement(stmtId);
+  }
+}

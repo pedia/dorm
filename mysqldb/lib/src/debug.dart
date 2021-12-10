@@ -48,7 +48,7 @@ Uint8List bytesFromHexed(String s) {
   final out = <int>[];
   for (int i = 0; i < s.length; ++i) {
     var char = s[i];
-    if (char == ' ' || char == '\n') continue;
+    if (char == ' ' || char == '\n' || char == '|') continue;
 
     char += s[i++ + 1];
 

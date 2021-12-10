@@ -27,7 +27,7 @@ enum Command {
   stmtPrepare, // 22 0x16
   stmtExecute,
   stmtSendLongData,
-  stmtClose,
+  stmtClose, // 0x19
   stmtReset,
   setOption,
   stmtFetch,

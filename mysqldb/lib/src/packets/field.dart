@@ -29,6 +29,39 @@ class Field {
   static const int typeString = 0xfe;
   static const int typeGeometry = 0xff;
 
+  static String? typeNameOf(int type) {
+    final names = {
+      0x00: 'Decimal',
+      0x01: 'Tiny',
+      0x02: 'Short',
+      0x03: 'Long',
+      0x04: 'Float',
+      0x05: 'Double',
+      0x06: 'Null',
+      0x07: 'Timestamp',
+      0x08: 'Longlong',
+      0x09: 'Int24',
+      0x0a: 'Date',
+      0x0b: 'Time',
+      0x0c: 'Datetime',
+      0x0d: 'Year',
+      0x0e: 'Newdate',
+      0x0f: 'Varchar',
+      0x10: 'Bit',
+      0xf6: 'Newdecimal',
+      0xf7: 'Enum',
+      0xf8: 'Set',
+      0xf9: 'TinyBlob',
+      0xfa: 'MediumBlob',
+      0xfb: 'LongBlob',
+      0xfc: 'Blob',
+      0xfd: 'VarString',
+      0xfe: 'String',
+      0xff: 'Geometry',
+    };
+    return names[type];
+  }
+
   // NULL is sent as 0xfb
   static const int nullValue = 0xfb;
 
