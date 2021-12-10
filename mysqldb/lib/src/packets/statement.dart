@@ -401,7 +401,7 @@ class BinaryRow extends Packet {
     assert(_ == 0);
     Uint8List nullBitmap = input.read((cds.length + 7 + 2) ~/ 8);
     final bits = List.generate(cds.length, (i) {
-      // weired +2
+      // weird +2
       final byte = (i + 2) ~/ 8;
       final bit = 1 << ((i + 2) % 8);
       return nullBitmap[byte] & bit == bit;
@@ -425,19 +425,19 @@ class BinaryRow extends Packet {
           values.add(value);
           break;
 
-        ///
+        /// All integer types are signed here.
         case Field.typeTiny:
-          values.add(input.readu8());
+          values.add(input.readi8());
           break;
         case Field.typeShort:
-          values.add(input.readu16());
+          values.add(input.readi16());
           break;
         case Field.typeInt24:
         case Field.typeLong:
-          values.add(input.readu32());
+          values.add(input.readi32());
           break;
         case Field.typeLonglong:
-          values.add(input.readu64());
+          values.add(input.readi64());
           break;
 
         ///
@@ -453,27 +453,30 @@ class BinaryRow extends Packet {
         case Field.typeDatetime:
         case Field.typeTimestamp:
           final len = input.readu8();
+          final sub = InputStream.from(input.read(len));
           if (len == 4) {
             final dt = DateTime(
-              input.readu16(),
-              input.readu8(),
-              input.readu8(),
+              sub.readu16(),
+              sub.readu8(),
+              sub.readu8(),
             );
+            assert(sub.byteLeft == 0);
             values.add(dt);
           } else if (len >= 7) {
             var dt = DateTime(
-              input.readu16(),
-              input.readu8(),
-              input.readu8(),
-              input.readu8(),
-              input.readu8(),
-              input.readu8(),
+              sub.readu16(),
+              sub.readu8(),
+              sub.readu8(),
+              sub.readu8(),
+              sub.readu8(),
+              sub.readu8(),
             );
 
             if (len == 11) {
-              final mcs = input.readu32();
+              final mcs = sub.readu32();
               dt = dt.add(Duration(microseconds: mcs));
             }
+            assert(sub.byteLeft == 0);
             values.add(dt);
           }
           break;
@@ -481,18 +484,22 @@ class BinaryRow extends Packet {
         ///
         case Field.typeTime:
           final len = input.readu8();
-          int days = input.readu32();
-          if (days == 1) days = -days;
+          final sub = InputStream.from(input.read(len));
+
+          int sign = sub.readu8();
+          int days = sub.readu32();
+          if (sign == 1) days = -days;
           var d = Duration(
             days: days,
-            hours: input.readu8(),
-            minutes: input.readu8(),
-            seconds: input.readu8(),
+            hours: sub.readu8(),
+            minutes: sub.readu8(),
+            seconds: sub.readu8(),
           );
 
           if (len > 8) {
-            d += Duration(microseconds: input.readu32());
+            d += Duration(microseconds: sub.readu32());
           }
+          assert(sub.byteLeft == 0);
           values.add(d);
           break;
 

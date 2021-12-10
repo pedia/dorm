@@ -50,6 +50,13 @@ class InputStream {
     return res;
   }
 
+  int readi16([Endian endian = Endian.little]) {
+    assert(offset + Int16List.bytesPerElement <= byteLength);
+    final res = buf.getInt16(offset, endian);
+    offset += Int16List.bytesPerElement;
+    return res;
+  }
+
   int readu32([Endian endian = Endian.little]) {
     assert(offset + Uint32List.bytesPerElement <= byteLength);
     final res = buf.getUint32(offset, endian);
@@ -57,10 +64,24 @@ class InputStream {
     return res;
   }
 
+  int readi32([Endian endian = Endian.little]) {
+    assert(offset + Int32List.bytesPerElement <= byteLength);
+    final res = buf.getInt32(offset, endian);
+    offset += Int32List.bytesPerElement;
+    return res;
+  }
+
   int readu64([Endian endian = Endian.little]) {
     assert(offset + Uint64List.bytesPerElement <= byteLength);
     final res = buf.getUint64(offset, endian);
     offset += Uint64List.bytesPerElement;
+    return res;
+  }
+
+  int readi64([Endian endian = Endian.little]) {
+    assert(offset + Int64List.bytesPerElement <= byteLength);
+    final res = buf.getInt64(offset, endian);
+    offset += Int64List.bytesPerElement;
     return res;
   }
 

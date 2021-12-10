@@ -303,4 +303,54 @@ main() {
     expect(rs.rows.first.values[3], 'foo');
     expect(rs.rows.first.values[4], DateTime(2021, 12, 09));
   });
+
+  test('TimesTest', () {
+    /// SELECT MAKETIME(12,15,?), UNIX_TIMESTAMP(), UTC_TIME(),
+    /// STR_TO_DATE('2003-01-02 10:30:00.000123', '%Y-%m-%d %H:%i:%s.%f')", [0]
+    final e17resp = bytesFromHexed(''
+        '01 00 00 01 07 27 00 00    02 03 64 65 66 00 00 00' // .....'....def...
+        '11 4d 41 4b 45 54 49 4d    45 28 31 32 2c 31 35 2c' // .MAKETIME(12,15,
+        '3f 29 00 0c 3f 00 0a 00    00 00 0b 80 00 00 00 00' // ?)..?...........
+        '17 00 00 03 03 64 65 66    00 00 00 01 41 00 0c 2d' // .....def....A..-
+        '00 04 00 00 00 fd 01 00    1f 00 00 26 00 00 04 03' // ...........&....
+        '64 65 66 00 00 00 10 55    4e 49 58 5f 54 49 4d 45' // def....UNIX_TIME
+        '53 54 41 4d 50 28 29 00    0c 3f 00 0b 00 00 00 08' // STAMP()..?......
+        '81 00 00 00 00 18 00 00    05 03 64 65 66 00 00 00' // ..........def...
+        '02 41 41 00 0c 2d 00 08    00 00 00 fd 01 00 1f 00' // .AA..-..........
+        '00 20 00 00 06 03 64 65    66 00 00 00 0a 55 54 43' // . ....def....UTC
+        '5f 54 49 4d 45 28 29 00    0c 3f 00 08 00 00 00 0b' // _TIME()..?......
+        '81 00 00 00 00 19 00 00    07 03 64 65 66 00 00 00' // ..........def...
+        '03 41 41 41 00 0c 2d 00    0c 00 00 00 fd 01 00 1f' // .AAA..-.........
+        '00 00 57 00 00 08 03 64    65 66 00 00 00 41 53 54' // ..W....def...AST
+        '52 5f 54 4f 5f 44 41 54    45 28 27 32 30 30 33 2d' // R_TO_DATE('2003-
+        '30 31 2d 30 32 20 31 30    3a 33 30 3a 30 30 2e 30' // 01-02 10:30:00.0
+        '30 30 31 32 33 27 2c 20    27 25 59 2d 25 6d 2d 25' // 00123', '%Y-%m-%
+        '64 20 25 48 3a 25 69 3a    25 73 2e 25 66 27 29 00' // d %H:%i:%s.%f').
+        '0c 3f 00 1a 00 00 00 0c    80 00 06 00 00 05 00 00' // .?..............
+        '09 fe 00 00 00 00 32 00    00 0a 00 00 00 08 00 00' // ......2.........
+        '00 00 00 0c 0f 00 01 41    2e f0 b2 61 00 00 00 00' // .......A..a....
+        '02 41 41 08 00 00 00 00    00 06 0e 06 03 41 41 41' // .AA..........AAA
+        '0b d3 07 01 02 0a 1e 00    7b 00 00 00 05 00 00 0b' // ........{.......
+        'fe 00 00 00 00' //                                      .....
+        );
+    final rs = BinaryResultSet.parse(InputStream.from(e17resp));
+    expect(rs.cds.length, 7);
+    expect(rs.cds[0].columnType, Field.typeTime);
+    expect(rs.cds[2].columnType, Field.typeLonglong);
+    expect(rs.cds[4].columnType, Field.typeTime);
+    expect(rs.cds[6].columnType, Field.typeDatetime);
+
+    /// (datetime.timedelta(seconds=44100), 1639116846,
+    /// datetime.timedelta(seconds=22446),
+    /// datetime.datetime(2003, 1, 2, 10, 30, 0, 123))
+    expect(rs.rows.first.values[0], Duration(seconds: 44100));
+    expect(rs.rows.first.values[1], 'A');
+    expect(rs.rows.first.values[2], 1639116846);
+    expect(rs.rows.first.values[3], 'AA');
+    expect(rs.rows.first.values[4], Duration(seconds: 22446));
+    expect(rs.rows.first.values[5], 'AAA');
+    expect(
+        rs.rows.first.values[6], DateTime.parse('2003-01-02 10:30:00.000123'));
+    // TODO: more test
+  });
 }

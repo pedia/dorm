@@ -156,9 +156,6 @@ main() {
         );
 
     final rs = ResultSet.parse(InputStream.from(rsbytes));
-    for (final cd in rs.columns) {
-      print('${cd.name} 0x${cd.flags.toRadixString(16)}');
-    }
 
     expect(
       rs.serverStatus,
@@ -239,12 +236,18 @@ main() {
         '65 03 32 35 32 05 00 00    0a fe 00 00 22 00'); //      e.252...."..".
 
     final rs = ResultSet.parse(InputStream.from(bytes));
-    // print(rs);
-
-    expect(rs.rows[0][0].value,
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234567890123456789012345678901234567890123456789012');
-    expect(rs.rows[0][1].value,
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa123456789012345678901234567890123456789012345678901');
+    expect(
+        rs.rows[0][0].value,
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234567890'
+        '123456789012345678901234567890123456789012');
+    expect(
+        rs.rows[0][1].value,
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234567890'
+        '12345678901234567890123456789012345678901');
     expect(rs.rows[0][2].value, 251);
 
     expect(rs.rows[1][0].value, 'b');
