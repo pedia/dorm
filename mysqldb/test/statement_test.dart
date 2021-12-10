@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:mysqldb/impl.dart';
 import 'package:mysqldb/src/debug.dart';
 
@@ -117,18 +116,7 @@ main() {
   });
 
   test('BinaryValueTest', () {
-    {
-      final bytes = bytesFromHexed('66 66 66 66 66 66 24 40');
-      // InputStream.from(bytes);
-      final d = ByteData.view(bytes.buffer).getFloat64(0);
-      // expect(d, 10.2);
-    }
-
-    {
-      final bytes = bytesFromHexed('33 33 23 41');
-      final d = ByteData.view(bytes.buffer).getFloat32(0);
-      // expect(d, 10.2);
-    }
+    // TODO: https://dev.mysql.com/doc/internals/en/binary-protocol-value.html
   });
 
   test('BinaryResultSetTest', () {

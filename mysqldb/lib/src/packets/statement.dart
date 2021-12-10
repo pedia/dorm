@@ -453,14 +453,17 @@ class BinaryRow extends Packet {
         case Field.typeDatetime:
         case Field.typeTimestamp:
           final len = input.readu8();
+
           final sub = InputStream.from(input.read(len));
-          if (len == 4) {
+          if (len == 0) {
+            values.add(DateTime(0));
+          } else if (len == 4) {
             final dt = DateTime(
               sub.readu16(),
               sub.readu8(),
               sub.readu8(),
             );
-            assert(sub.byteLeft == 0);
+
             values.add(dt);
           } else if (len >= 7) {
             var dt = DateTime(
@@ -476,9 +479,11 @@ class BinaryRow extends Packet {
               final mcs = sub.readu32();
               dt = dt.add(Duration(microseconds: mcs));
             }
-            assert(sub.byteLeft == 0);
+
             values.add(dt);
           }
+
+          assert(sub.byteLeft == 0);
           break;
 
         ///
