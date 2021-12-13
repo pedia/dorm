@@ -42,6 +42,9 @@ main() {
       expect(q.body, isNotNull);
       expect(q.body.select, isNotNull);
       expect(q.body.select!.from_.isNotEmpty, isTrue);
+      print(fn);
+      print(q.body.select!.tables);
+      print(q.body.select!.tables2);
     }
   });
 }

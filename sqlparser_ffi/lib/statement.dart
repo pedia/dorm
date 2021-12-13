@@ -10,6 +10,9 @@ class Ident {
 
   @override
   bool operator ==(Object other) => other is Ident && other.value == value;
+
+  @override
+  String toString() => value;
 }
 
 /// `[ NOT ] IN (val1, val2, ...)`
@@ -149,6 +152,41 @@ class Select {
             .map((i) => LateralView.from(i))
             .toList(),
       );
+
+  /// Return All tables even in subquery
+  List<String> get tables {
+    //
+    final rs = from_
+        .map((t) => t.relation.table?.name.map((e) => e.value).join('.'))
+        .takeWhile((value) => value != null)
+        .cast<String>()
+        .toList();
+
+    // subquery
+    for (var t in from_) {
+      final s = t.relation.derived?.subquery.body.select?.tables;
+      if (s != null && s.isNotEmpty) rs.addAll(s);
+    }
+
+    return rs;
+  }
+
+  List<List<Ident>> get tablesOfIdent {
+    //
+    final rs = from_
+        .map((t) => t.relation.table?.name)
+        .takeWhile((value) => value != null)
+        .cast<List<Ident>>()
+        .toList();
+
+    // subquery
+    for (var t in from_) {
+      final s = t.relation.derived?.subquery.body.select?.tablesOfIdent;
+      if (s != null && s.isNotEmpty) rs.addAll(s);
+    }
+
+    return rs;
+  }
 }
 
 typedef ObjectName = List<Ident>;
