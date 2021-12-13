@@ -7,7 +7,6 @@ class State extends Flag {
   static const int sendAuthentication = 0x01;
   static const int logined = 0x02;
   static const int logout = 0x04;
-  // switch user
 }
 
 typedef PacketCreator = Packet Function(InputStream);
@@ -44,22 +43,16 @@ class Client {
   }
 
   late Capability serverCapability;
-  late StreamSubscription subscription;
-  late Uint8List scramble;
-  int packetId = -1;
-  int get nextPacketId => ++packetId;
 
   State state = State(State.unknown);
 
-  /// Create instance with Type via dart:mirrors.
-  // Type? npt;
   PacketCreator? creator;
-  Completer<ResultSet>? queryCompleter;
+  Completer? queryCompleter;
   final Completer<State> _logined = Completer<State>();
   Future get logined => _logined.future;
 
   void init() {
-    subscription = socket.listen(
+    socket.listen(
       onData,
       onError: onError,
       cancelOnError: true,
@@ -73,8 +66,6 @@ class Client {
       socket.close();
       return;
     }
-
-    packetId = p.packetId!;
 
     if (!state.has(State.sendAuthentication)) {
       final hs = Handshake.parse(p.inputStream);
@@ -101,13 +92,9 @@ class Client {
       ca.sendTo(socket);
       state.set(State.sendAuthentication);
     } else {
-      final ok = OkPacket.parse(p.inputStream, clientCapability);
+      final _ = OkPacket.parse(p.inputStream, clientCapability);
       state.set(State.logined);
       _logined.complete(state);
-
-      // Packet.build(0, Query(sql: 'show databases')).sendTo(socket);
-      // Packet.build(0, Query(sql: 'show variables like "%name"')).sendTo(socket);
-      // npt = ResultSet;
     }
   }
 
@@ -147,8 +134,9 @@ class Client {
         //   [input],
         // ).reflectee as Packet;
         final np = creator!(input);
+        creator = null;
 
-        if (queryCompleter != null && np is ResultSet) {
+        if (queryCompleter != null) {
           queryCompleter!.complete(np);
         }
       }
@@ -159,7 +147,8 @@ class Client {
     print('got error $err');
   }
 
-  Future<ResultSet> query(String sql) {
+  ///
+  Future query(String sql) {
     queryCompleter = Completer<ResultSet>();
 
     assert(state.has(State.logined));
@@ -168,5 +157,35 @@ class Client {
     creator = ResultSet.parse;
 
     return queryCompleter!.future;
+  }
+
+  Future<ResultSet> execute(String sql,
+      [List<Object?> params = const []]) async {
+    final completerAll = Completer<ResultSet>();
+
+    // 1
+    queryCompleter = Completer();
+    Packet.build(0, PrepareStatement(sql: sql)).sendTo(socket);
+
+    queryCompleter!.future.then((psr) async {
+      // 2
+      queryCompleter = Completer();
+      Packet.build(
+        0,
+        ExecuteStatement(
+          stmtId: (psr as PrepareStatementResponse).stmtId,
+          values: params.map((e) => Field.of(e)).toList(),
+        ),
+      ).sendTo(socket);
+
+      BinaryResultSet brs = await queryCompleter!.future;
+
+      completerAll.complete(brs.rs);
+
+      queryCompleter = null;
+      Packet.build(0, CloseStatement(psr.stmtId)).sendTo(socket);
+    });
+
+    return completerAll.future;
   }
 }

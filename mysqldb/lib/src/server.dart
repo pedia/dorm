@@ -2,10 +2,14 @@ part of mysql.server;
 
 ///
 class Server {
-  static Future<Server> start(String address, Database db) async {
+  static Future<Server> start({
+    required String address,
+    required Database db,
+    Future<CachingSha2Password>? passwordStore,
+  }) async {
     final arr = address.split(':');
     return ServerSocket.bind(arr[0], int.parse(arr[1])).then<Server>(
-      (socket) => Server(socket, db).._init(),
+      (socket) => Server(socket, db).._init(passwordStore),
     );
   }
 
@@ -25,12 +29,13 @@ class Server {
   int threadId = 0;
   int get nextThreadId => ++threadId;
 
-  void _init() {
+  void _init([Future<CachingSha2Password>? passwordStore]) {
     socket.listen(onNewClient);
 
-    CachingSha2Password.loadAsync('passwd').then(
-      (store) => passwordStore = store,
-    );
+    Future f = passwordStore ?? CachingSha2Password.loadAsync('passwd');
+    f.then((store) {
+      this.passwordStore = store;
+    });
   }
 
   void onNewClient(Socket clientSocket) {

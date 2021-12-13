@@ -128,7 +128,7 @@ main() {
         '02 00');
     final brs = BinaryResultSet.parse(InputStream.from(bytes));
     expect(brs, isNotNull);
-    expect(brs.rows.first.values.first, 'foobar');
+    expect(brs.rows.first.values.first.value, 'foobar');
   });
 
   test('ConcatStatementTest', () {
@@ -167,7 +167,7 @@ main() {
     expect(rs, isNotNull);
     expect(rs.rows.length, 1);
     expect(rs.rows.first.values.length, 1);
-    expect(rs.rows.first.values.first, 'abc');
+    expect(rs.rows.first.values[0].value, 'abc');
   });
 
   test('PlusStatementTest', () {
@@ -207,6 +207,9 @@ main() {
     final rs = CommandPacket.parse(p.inputStream);
     expect(rs is CloseStatement, isTrue);
     expect((rs as CloseStatement).stmtId, 2);
+
+    final dest = Packet.build(0, rs).encode();
+    expect(dest, bytes);
   });
 
   test('EmptyQuestionMarkTest', () {
@@ -219,7 +222,7 @@ main() {
         );
     final rs = BinaryResultSet.parse(InputStream.from(bytes));
     expect(rs.cds[0].columnType, Field.typeDate);
-    expect(rs.rows[0].values.first, DateTime(2021, 12, 10));
+    expect(rs.rows[0].values.first.value, DateTime(2021, 12, 10));
 
 // ##
 // T 127.0.0.1:58820 -> 127.0.0.1:3337 [AP] #1911
@@ -285,11 +288,11 @@ main() {
     expect(rs.cds[4].columnType, Field.typeDate);
 
     // None, 1, 3.14, 'foo', curdate
-    expect(rs.rows.first.values.first, isNull);
-    expect(rs.rows.first.values[1], 1);
-    expect(rs.rows.first.values[2], 3.14);
-    expect(rs.rows.first.values[3], 'foo');
-    expect(rs.rows.first.values[4], DateTime(2021, 12, 09));
+    expect(rs.rows.first.values[0].value, isNull);
+    expect(rs.rows.first.values[1].value, 1);
+    expect(rs.rows.first.values[2].value, 3.14);
+    expect(rs.rows.first.values[3].value, 'foo');
+    expect(rs.rows.first.values[4].value, DateTime(2021, 12, 09));
   });
 
   test('TimesTest', () {
@@ -331,14 +334,14 @@ main() {
     /// (datetime.timedelta(seconds=44100), 1639116846,
     /// datetime.timedelta(seconds=22446),
     /// datetime.datetime(2003, 1, 2, 10, 30, 0, 123))
-    expect(rs.rows.first.values[0], Duration(seconds: 44100));
-    expect(rs.rows.first.values[1], 'A');
-    expect(rs.rows.first.values[2], 1639116846);
-    expect(rs.rows.first.values[3], 'AA');
-    expect(rs.rows.first.values[4], Duration(seconds: 22446));
-    expect(rs.rows.first.values[5], 'AAA');
-    expect(
-        rs.rows.first.values[6], DateTime.parse('2003-01-02 10:30:00.000123'));
+    expect(rs.rows.first.values[0].value, Duration(seconds: 44100));
+    expect(rs.rows.first.values[1].value, 'A');
+    expect(rs.rows.first.values[2].value, 1639116846);
+    expect(rs.rows.first.values[3].value, 'AA');
+    expect(rs.rows.first.values[4].value, Duration(seconds: 22446));
+    expect(rs.rows.first.values[5].value, 'AAA');
+    expect(rs.rows.first.values[6].value,
+        DateTime.parse('2003-01-02 10:30:00.000123'));
     // TODO: more test
   });
 }

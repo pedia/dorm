@@ -73,10 +73,26 @@ class Field {
 
   final int? decimals;
 
-  Field({this.value, this.width, required this.type, this.decimals});
+  Field(this.value, this.type, {this.width, this.decimals = 0});
 
-  factory Field.string(String? value) =>
-      Field(value: value, type: typeVarString);
+  factory Field.of(Object? o) {
+    if (o == null) {
+      return Field(null, typeNull);
+    } else if (o is String) {
+      return Field(o, typeVarString);
+    } else if (o is Double) {
+      return Field(o, typeDouble);
+    } else if (o is int) {
+      return Field(o, typeLong);
+    } else if (o is Duration) {
+      return Field(o, typeTime);
+    } else if (o is DateTime) {
+      return Field(o, typeDatetime);
+    }
+    throw UnimplementedError();
+  }
+
+  factory Field.string(String? value) => Field(value, typeVarString);
 
   Uint8List encode([OutputStream? out]) {
     out ??= OutputStream();
@@ -167,7 +183,7 @@ class Field {
 
     if (force == nullValue) {
       input.skip(1);
-      return Field(value: null, width: 4, type: fieldType);
+      return Field(null, fieldType, width: 4);
     }
 
     final len = input.readLength();
@@ -180,19 +196,15 @@ class Field {
       case typeInt24:
       case typeYear:
         final s = utf8.decode(bytes);
-        return Field(
-          value: int.parse(s),
-          width: s.length,
-          type: fieldType,
-        );
+        return Field(int.parse(s), fieldType, width: s.length);
       case typeNewdecimal:
       case typeFloat:
       case typeDouble:
         final s = utf8.decode(bytes);
         return Field(
-          value: double.parse(s),
+          double.parse(s),
+          fieldType,
           width: s.length,
-          type: fieldType,
           decimals: decimals,
         );
       case typeBit:
@@ -200,15 +212,15 @@ class Field {
         for (int n in bytes) {
           v = (v << 8) + n;
         }
-        return Field(value: v, width: 8, type: fieldType);
+        return Field(v, fieldType, width: 8);
       case typeDate:
       case typeDatetime:
       case typeTimestamp:
         final s = utf8.decode(bytes);
         return Field(
-          value: DateTime.parse(s),
+          DateTime.parse(s),
+          fieldType,
           width: s.length,
-          type: fieldType,
         );
       case typeTime:
         final arr = utf8.decode(bytes).split(':');
@@ -217,20 +229,20 @@ class Field {
           minutes: int.parse(arr[0]),
           seconds: int.parse(arr[0]),
         );
-        return Field(value: d, width: 8, type: fieldType);
+        return Field(d, fieldType, width: 8);
       case typeString:
       case typeVarString:
       case typeGeometry:
         if (force == 0) {
-          return Field(value: '', width: 0, type: fieldType);
+          return Field('', fieldType, width: 0);
         }
         final s = utf8.decode(bytes);
-        return Field(value: s, width: s.length, type: fieldType);
+        return Field(s, fieldType, width: s.length);
       case typeBlob:
         if (force == 0) {
-          return Field(value: Uint8List(0), width: 0, type: fieldType);
+          return Field(Uint8List(0), fieldType, width: 0);
         }
-        return Field(value: bytes, width: bytes.length * 2, type: fieldType);
+        return Field(bytes, fieldType, width: bytes.length * 2);
       default:
         throw Exception('FieldType $fieldType is unknown, $bytes');
     }

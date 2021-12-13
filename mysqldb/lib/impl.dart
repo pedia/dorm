@@ -1,6 +1,7 @@
 library mysql.impl;
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math';

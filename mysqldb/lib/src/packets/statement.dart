@@ -6,7 +6,7 @@ class CommandPacket extends Packet {
   CommandPacket(this.command);
 
   factory CommandPacket.parse(InputStream input, [Object? arg]) {
-    // TODO: Use peek instead
+    /// Use [peek] instead
     final cmd = Command.values[input.readu8()];
     switch (cmd) {
       case Command.quit:
@@ -65,8 +65,7 @@ class PingCommand extends CommandPacket {
   PingCommand() : super(Command.ping);
   @override
   Uint8List encode() {
-    final out = OutputStream();
-    out.write8(command.index);
+    final out = OutputStream()..write8(command.index);
     return out.finished();
   }
 }
@@ -82,10 +81,10 @@ class FieldListCommand extends CommandPacket {
 
   @override
   Uint8List encode() {
-    final out = OutputStream();
-    out.write8(command.index);
-    out.writeCString(table);
-    out.writeString(fieldWildcard);
+    final out = OutputStream()
+      ..write8(command.index)
+      ..writeCString(table)
+      ..writeString(fieldWildcard);
     return out.finished();
   }
 
@@ -135,9 +134,9 @@ class PrepareStatement extends CommandPacket {
 
   @override
   Uint8List encode() {
-    final out = OutputStream();
-    out.write8(command.index);
-    out.writeString(sql);
+    final out = OutputStream()
+      ..write8(command.index)
+      ..writeString(sql);
     return out.finished();
   }
 
@@ -176,13 +175,13 @@ class PrepareStatementResponse extends Packet {
     int pid = 1;
     final out = OutputStream();
     {
-      final sub = OutputStream();
-      sub.write8(status);
-      sub.write32(stmtId);
-      sub.write16(numColumns);
-      sub.write16(numParams);
-      sub.write8(reserved1);
-      sub.write16(warningCount);
+      final sub = OutputStream()
+        ..write8(status)
+        ..write32(stmtId)
+        ..write16(numColumns)
+        ..write16(numParams)
+        ..write8(reserved1)
+        ..write16(warningCount);
       out.write(Packet(pid++, sub.finished()).encode());
     }
 
@@ -348,11 +347,10 @@ class ExecuteStatement extends CommandPacket {
         for (final type in types) {
           switch (type) {
             case Field.typeNull:
-              values.add(Field(value: null, type: Field.typeNull));
+              values.add(Field(null, Field.typeNull));
               break;
             case Field.typeTiny:
-              values.add(
-                  Field(value: p.inputStream.readu8(), type: Field.typeTiny));
+              values.add(Field(p.inputStream.readu8(), Field.typeTiny));
               break;
             case Field.typeLong:
               break;
@@ -370,9 +368,8 @@ class ExecuteStatement extends CommandPacket {
             case Field.typeBlob:
               break;
             case Field.typeVarchar:
-              values.add(Field(
-                  value: p.inputStream.readLengthEncodedString(),
-                  type: Field.typeVarString));
+              values.add(Field(p.inputStream.readLengthEncodedString(),
+                  Field.typeVarString));
               break;
             default:
               break;
@@ -393,7 +390,7 @@ class ExecuteStatement extends CommandPacket {
 
 /// https://dev.mysql.com/doc/internals/en/binary-protocol-resultset-row.html
 class BinaryRow extends Packet {
-  final List<Object?> values;
+  final List<Field> values;
   BinaryRow(this.values);
 
   factory BinaryRow.parse(InputStream input, List<ColumnDefinition> cds) {
@@ -406,11 +403,11 @@ class BinaryRow extends Packet {
       final bit = 1 << ((i + 2) % 8);
       return nullBitmap[byte] & bit == bit;
     });
-    final values = <Object?>[];
+    final values = <Field>[];
 
     for (int i = 0; i < cds.length; ++i) {
       if (bits[i]) {
-        values.add(null);
+        values.add(Field(null, Field.typeNull));
         assert(cds[i].columnType == Field.typeNull);
         continue;
       }
@@ -422,30 +419,30 @@ class BinaryRow extends Packet {
         case Field.typeString:
         case Field.typeVarString:
           final value = input.readLengthEncodedString();
-          values.add(value);
+          values.add(Field(value, cd.columnType));
           break;
 
         /// All integer types are signed here.
         case Field.typeTiny:
-          values.add(input.readi8());
+          values.add(Field(input.readi8(), cd.columnType));
           break;
         case Field.typeShort:
-          values.add(input.readi16());
+          values.add(Field(input.readi16(), cd.columnType));
           break;
         case Field.typeInt24:
         case Field.typeLong:
-          values.add(input.readi32());
+          values.add(Field(input.readi32(), cd.columnType));
           break;
         case Field.typeLonglong:
-          values.add(input.readi64());
+          values.add(Field(input.readi64(), cd.columnType));
           break;
 
         ///
         case Field.typeFloat:
-          values.add(input.readFloat());
+          values.add(Field(input.readFloat(), cd.columnType));
           break;
         case Field.typeDouble:
-          values.add(input.readDouble());
+          values.add(Field(input.readDouble(), cd.columnType));
           break;
 
         ///
@@ -456,7 +453,7 @@ class BinaryRow extends Packet {
 
           final sub = InputStream.from(input.read(len));
           if (len == 0) {
-            values.add(DateTime(0));
+            values.add(Field(DateTime(0), cd.columnType));
           } else if (len == 4) {
             final dt = DateTime(
               sub.readu16(),
@@ -464,7 +461,7 @@ class BinaryRow extends Packet {
               sub.readu8(),
             );
 
-            values.add(dt);
+            values.add(Field(dt, cd.columnType));
           } else if (len >= 7) {
             var dt = DateTime(
               sub.readu16(),
@@ -480,7 +477,7 @@ class BinaryRow extends Packet {
               dt = dt.add(Duration(microseconds: mcs));
             }
 
-            values.add(dt);
+            values.add(Field(dt, cd.columnType));
           }
 
           assert(sub.byteLeft == 0);
@@ -505,7 +502,7 @@ class BinaryRow extends Packet {
             d += Duration(microseconds: sub.readu32());
           }
           assert(sub.byteLeft == 0);
-          values.add(d);
+          values.add(Field(d, cd.columnType));
           break;
 
         default:
@@ -513,7 +510,7 @@ class BinaryRow extends Packet {
       }
     }
 
-    // assert(input.byteLeft == 0);
+    assert(input.byteLeft == 0);
     return BinaryRow(values);
   }
 }
@@ -523,6 +520,9 @@ class BinaryResultSet extends Packet {
   final List<BinaryRow> rows;
 
   BinaryResultSet(this.cds, this.rows);
+
+  /// Convert to Text Protocol [ResultSet]
+  ResultSet get rs => ResultSet(cds, rows.map((e) => e.values).toList());
 
   factory BinaryResultSet.parse(InputStream input) {
     final cds = <ColumnDefinition>[];
@@ -567,9 +567,9 @@ class CloseStatement extends CommandPacket {
 
   @override
   Uint8List encode() {
-    final out = OutputStream();
-    out.write8(command.index);
-    out.write32(stmtId);
+    final out = OutputStream()
+      ..write8(command.index)
+      ..write32(stmtId);
     return out.finished();
   }
 

@@ -222,8 +222,8 @@ class MockDatabase extends Database {
         ], [
           [
             Field(
-              value: DateTime(now.year, now.day, now.day),
-              type: Field.typeDate,
+              DateTime(now.year, now.day, now.day),
+              Field.typeDate,
             )
           ]
         ]));
