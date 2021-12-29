@@ -518,8 +518,15 @@ class BinaryRow extends Packet {
 class BinaryResultSet extends Packet {
   final List<ColumnDefinition> cds;
   final List<BinaryRow> rows;
+  final int? affectedRows;
+  final int? lastInsertId;
 
-  BinaryResultSet(this.cds, this.rows);
+  BinaryResultSet(
+    this.cds,
+    this.rows, {
+    this.affectedRows = 0,
+    this.lastInsertId = 0,
+  });
 
   /// Convert to Text Protocol [ResultSet]
   ResultSet get rs => ResultSet(cds, rows.map((e) => e.values).toList());
@@ -529,8 +536,15 @@ class BinaryResultSet extends Packet {
     final rows = <BinaryRow>[];
 
     final p0 = Packet.parse(input);
-    if (p0 is EofPacket || p0 is OkPacket) {
-      return BinaryResultSet(cds, rows); // Is this right?
+    if (p0 is EofPacket) {
+      return BinaryResultSet(cds, rows);
+    } else if (p0 is OkPacket) {
+      return BinaryResultSet(
+        cds,
+        rows,
+        affectedRows: p0.affectedRows,
+        lastInsertId: p0.lastInsertId,
+      );
     }
 
     /// column define count

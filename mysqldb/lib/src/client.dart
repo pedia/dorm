@@ -159,9 +159,9 @@ class Client {
     return queryCompleter!.future;
   }
 
-  Future<ResultSet> execute(String sql,
+  Future<BinaryResultSet> execute(String sql,
       [List<Object?> params = const []]) async {
-    final completerAll = Completer<ResultSet>();
+    final completerAll = Completer<BinaryResultSet>();
 
     // 1
     queryCompleter = Completer();
@@ -180,7 +180,7 @@ class Client {
 
       BinaryResultSet brs = await queryCompleter!.future;
 
-      completerAll.complete(brs.rs);
+      completerAll.complete(brs);
 
       queryCompleter = null;
       Packet.build(0, CloseStatement(psr.stmtId)).sendTo(socket);

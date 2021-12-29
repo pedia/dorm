@@ -44,7 +44,7 @@ main() {
       expect(q.body.select!.from_.isNotEmpty, isTrue);
       print(fn);
       print(q.body.select!.tables);
-      print(q.body.select!.tables2);
+      print(q.body.select!.tablesOfIdent);
     }
   });
 }

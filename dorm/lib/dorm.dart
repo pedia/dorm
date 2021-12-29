@@ -22,4 +22,4 @@ part 'src/database.dart';
 part 'src/result_set.dart';
 
 part 'src/driver/sqlite.dart';
-// part 'src/driver/mysql.dart';
+part 'src/driver/mysql.dart';

@@ -1,7 +1,7 @@
 part of dorm;
 
 ///
-/// Helper function, extract all [Field]s from members of [Model].
+/// Helper function, extract all [Field] from members of [Model].
 /// fieldsOf(Model)
 List<Field> fieldsOf(Type type) => reflectClass(type)
     .declarations

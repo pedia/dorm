@@ -10,7 +10,7 @@ dependencies:
   path:
   sqlite3:
   # postgrest:
-  reflection_factory:
+  reflection_factory: ^1.0.0
   mysqldb:
     path: ../mysqldb
 

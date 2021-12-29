@@ -41,6 +41,6 @@ class Dialect {
 
   // TODO: like '%abc', '%abc%'
   String like(dynamic val) {
-    return '%$escape(val)%';
+    return '%${escape(val)}%';
   }
 }

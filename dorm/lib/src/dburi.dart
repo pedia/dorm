@@ -1,7 +1,7 @@
 part of dorm;
 
+/// Like jdbcuri, wrap db connection parameters.
 ///
-/// Like jdbcuri, wrap db connection string.
 /// eg:
 ///   sqlite:///file.db
 ///   sqlite:///memory
