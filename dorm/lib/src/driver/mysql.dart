@@ -1,4 +1,10 @@
-part of dorm;
+import 'dart:async';
+
+import 'package:mysqldb/mysqldb.dart' as my;
+import 'package:mysqldb/impl.dart' as my;
+import 'package:dorm/src/database.dart';
+import 'package:dorm/src/dburi.dart';
+import 'package:dorm/src/result_set.dart';
 
 class MysqlConnection implements Connection {
   final my.Client db;

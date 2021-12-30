@@ -1,4 +1,5 @@
-part of dorm;
+import 'dart:mirrors';
+import 'package:dorm/src/model.dart';
 
 ///
 /// Helper function, extract all [Field] from members of [Model].

@@ -1,4 +1,7 @@
-part of dorm;
+import 'dart:collection';
+
+import 'package:meta/meta.dart';
+import 'package:collection/collection.dart';
 
 /// Base class for result sets that are either an in-memory ([ResultSet]) or
 /// a lazy iterator ([IteratingCursor]).

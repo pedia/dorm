@@ -1,4 +1,12 @@
-part of dorm;
+import 'dart:async';
+
+import 'package:dorm/src/dburi.dart';
+import 'package:dorm/src/model.dart';
+import 'package:dorm/src/dialect.dart';
+import 'package:dorm/src/result_set.dart';
+
+import 'package:dorm/src/driver/sqlite.dart';
+// import 'package:dorm/src/driver/mysql.dart';
 
 ///
 class Session {
@@ -58,9 +66,11 @@ class Session {
   static Future<Connection> create(DbUri uri) async {
     if (uri.scheme == 'sqlite') {
       return Future.value(SqliteConnection.create(uri));
-    } else if (uri.scheme == 'mysql') {
-      return MysqlConnection.create(uri);
-    } else {
+    }
+    // else if (uri.scheme == 'mysql') {
+    //  return MysqlConnection.create(uri);
+    // }
+    else {
       throw UnimplementedError('schema ${uri.scheme}');
     }
   }
@@ -91,15 +101,10 @@ class Database {
   void addAll(Map<String, String> map) =>
       map.forEach((bind, uri) => add(bind, uri));
 
-  void register(Type model) {
-    Table? table = tableOf(model);
+  void register(Table table) {
+    assert(!tables.containsKey(table.name));
 
-    if (table != null) {
-      // TODO: Log multiple retister
-      assert(!tables.containsKey(table.name));
-
-      tables[table.name] = table;
-    }
+    tables[table.name] = table;
   }
 
   ///
@@ -111,7 +116,7 @@ class Database {
     });
   }
 
-  Session? session([String bind = 'default']) => binds[bind];
+  Session? session([String? bind]) => binds[bind ?? 'default'];
 
   /// Keep used in test only.
   void clear() {

@@ -1,4 +1,4 @@
-part of dorm;
+import 'package:collection/collection.dart'; // for MapEquality
 
 /// Like jdbcuri, wrap db connection parameters.
 ///

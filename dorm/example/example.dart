@@ -1,7 +1,7 @@
-import 'package:dorm/dorm.dart';
+import 'package:dorm/annotation.dart';
 
 @table('user', 'auth')
-class User extends Model {
+class User {
   @field(name: 'uid', primaryKey: true)
   final int? id;
 
@@ -15,7 +15,7 @@ class User extends Model {
 }
 
 @table('article')
-class Article extends Model {
+class Article {
   @primaryKey
   int? id;
 
@@ -34,8 +34,8 @@ class Article extends Model {
 }
 
 void main() {
-  db.addAll({
-    'default': 'sqlite:///:memory:',
-    'auth': 'sqlite:///auth.db',
-  });
+  // db.addAll({
+  //   'default': 'sqlite:///:memory:',
+  //   'auth': 'sqlite:///auth.db',
+  // });
 }

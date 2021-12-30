@@ -1,15 +1,25 @@
-part of dorm;
+library dorm.annotation;
 
 /// The annotation `@table('name')` marks a Table for Model.
 /// ignore: camel_case_types
 class table {
-  const table(this.name, [this.bind]);
+  const table(
+    this.name, {
+    this.bind,
+    this.engine,
+    this.autoIncrement,
+    this.charset,
+    this.collate,
+  });
 
   final String name;
 
   final String? bind;
 
-  /// TODO: ENGINE, AUTO_INCREMENT, DEFAULT, CHARSET, COLLATE
+  final String? engine;
+  final int? autoIncrement;
+  final String? charset;
+  final String? collate;
 }
 
 /// The annotation `@field('name')` marks a Field for Model.
@@ -24,22 +34,22 @@ class field {
     this.enums,
     this.unique = false,
     this.maxLength,
-    this.doc,
+    this.comment,
     this.index = false,
     this.foreignKey,
   });
 
-  /// Field name. null value mean same as instance name.
+  /// Field name in table
   final String? name;
 
   final bool primaryKey;
   final bool autoIncrement;
   final bool nullable;
   final dynamic defaultValue;
-  final List<String>? enums;
+  final List<Object>? enums;
   final bool unique;
   final int? maxLength;
-  final String? doc;
+  final String? comment;
 
   /// KEY `tid` (`tid`),
   final bool index;
@@ -51,5 +61,12 @@ class field {
   final String? foreignKey;
 }
 
-/// Shortly, not very usefull.
+/// Used to annotate a property of a class is not [Field].
+const _NotField notfield = _NotField();
+
+class _NotField {
+  const _NotField();
+}
+
+/// Shortly annotate primary key [Field], not very usefull.
 const primaryKey = field(primaryKey: true, autoIncrement: true);

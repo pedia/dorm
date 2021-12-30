@@ -1,4 +1,7 @@
-part of dorm;
+import 'package:sqlite3/sqlite3.dart' as sqlite3;
+import 'package:dorm/src/dburi.dart';
+import 'package:dorm/src/database.dart';
+import 'package:dorm/src/result_set.dart';
 
 class SqliteConnection implements Connection {
   final sqlite3.Database db;

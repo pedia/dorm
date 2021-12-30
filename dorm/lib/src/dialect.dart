@@ -1,5 +1,3 @@
-part of dorm;
-
 ///
 class Dialect {
   const Dialect();

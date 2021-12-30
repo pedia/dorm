@@ -1,4 +1,9 @@
-part of dorm;
+import 'dart:cli';
+
+import 'package:dorm/annotation.dart';
+import 'package:dorm/src/dialect.dart';
+import 'package:dorm/src/result_set.dart';
+import 'package:dorm/src/database.dart';
 
 /// Help extension extract [String] typed [name].
 /// Symbol("id") => id
@@ -6,15 +11,23 @@ extension _SymbolWithName on Symbol {
   String get name => toString().split('"')[1];
 }
 
-/// Real [Table] of database.
+/// Real [Table] in database.
 class Table extends table {
   List<Field> fields;
 
   Table({
     required table base,
     required this.fields,
-  }) : super(base.name, base.bind);
+  }) : super(
+          base.name,
+          bind: base.bind,
+          engine: base.engine,
+          autoIncrement: base.autoIncrement,
+          charset: base.charset,
+          collate: base.collate,
+        );
 
+  ///
   /// CREATE TABLE article (id INT PRIMARY KEY, name varchar(100) NOT NULL);
   String get createSql {
     String fs = fields.map((f) => f.sqlClause(dialect)).toList().join(', ');
@@ -22,8 +35,8 @@ class Table extends table {
   }
 
   Dialect get dialect {
-    if (_dialect == null && bind != null) {
-      _dialect = db.session(bind!)?.dialect;
+    if (_dialect == null) {
+      _dialect = db.session(bind)?.dialect;
     }
 
     // default Dialect
@@ -60,7 +73,7 @@ class Field extends field {
           unique: base.unique,
           index: base.index,
           maxLength: base.maxLength,
-          doc: base.doc,
+          comment: base.comment,
         );
 
   /// Name of this field in database.
