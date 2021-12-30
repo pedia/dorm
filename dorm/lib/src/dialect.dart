@@ -9,6 +9,7 @@ class Dialect {
       case String:
         return 'TEXT';
       case DateTime:
+      case Duration:
         return 'DATETIME';
       case double:
         return 'DOUBLE';
@@ -16,10 +17,13 @@ class Dialect {
     return 'TODO: $type';
   }
 
-  /// rendering table and column names
+  /// Nonreserved keywords are permitted as identifiers without quoting.
+  /// Reserved words are permitted as identifiers if you quote them
+  /// as `val`.
   String quote(String val) => '`$val`';
 
-  // TODO: % _ ' "
+  // https://dev.mysql.com/doc/refman/5.7/en/string-literals.html
+  // % _ ' " to
   String escape(String val) {
     return val;
   }
