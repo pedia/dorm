@@ -232,7 +232,7 @@ class OutputStream {
 
   /// string<NUL>	NulTerminatedString
   void writeCString(String v) {
-    write(Uint8List.fromList(v.codeUnits));
+    write(Uint8List.fromList(utf8.encode(v)));
     write8(0);
   }
 
@@ -280,7 +280,7 @@ class OutputStream {
   /// string<lenenc>	LengthEncodedString
   void writeLengthEncodedString(String v) {
     writeLength(v.length);
-    write(Uint8List.fromList(v.codeUnits));
+    write(Uint8List.fromList(utf8.encode(v)));
   }
 
   void write3ByteLength(int v) {
