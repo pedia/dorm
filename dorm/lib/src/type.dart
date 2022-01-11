@@ -1,11 +1,11 @@
-class SqlType {}
+class FieldType {}
 
-class Text extends SqlType {}
+class Text extends FieldType {}
 
-class Integer extends SqlType {}
+class Integer extends FieldType {}
 
-class Datetime extends SqlType {}
+class Datetime extends FieldType {}
 
-class Enum extends SqlType {}
+class Enum extends FieldType {}
 
-class Blob extends SqlType {}
+class Blob extends FieldType {}

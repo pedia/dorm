@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dorm/src/dburi.dart';
 import 'package:dorm/src/model.dart';
+import 'package:dorm/src/table.dart';
 import 'package:dorm/src/dialect.dart';
 import 'package:dorm/src/result_set.dart';
 

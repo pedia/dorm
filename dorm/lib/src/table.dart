@@ -6,10 +6,13 @@ class Field extends field {
   //
   final Symbol symbol;
   final Type type;
-  Field({
+  final Object? impl;
+
+  Field.from(
+    field base, {
     required this.symbol,
     required this.type,
-    required field base,
+    this.impl,
   }) : super(
           name: base.name ?? symbol.name,
           primaryKey: base.primaryKey,
@@ -53,10 +56,10 @@ extension _SymbolWithName on Symbol {
 
 /// Real [Table] in database.
 class Table extends table {
-  List<Field> fields;
+  final List<Field> fields;
 
-  Table({
-    required table base,
+  Table.from(
+    table base, {
     required this.fields,
   }) : super(
           base.name,

@@ -9,247 +9,11 @@
 part of 'reflection_test.dart';
 
 // ignore: non_constant_identifier_names
-AdminUser AdminUser$fromJson(Map<String, Object?> map) =>
-    AdminUser$reflection.staticInstance.fromJson(map);
-// ignore: non_constant_identifier_names
-AdminUser AdminUser$fromJsonEncoded(String jsonEncoded) =>
-    AdminUser$reflection.staticInstance.fromJsonEncoded(jsonEncoded);
-// ignore: non_constant_identifier_names
 User User$fromJson(Map<String, Object?> map) =>
     User$reflection.staticInstance.fromJson(map);
 // ignore: non_constant_identifier_names
 User User$fromJsonEncoded(String jsonEncoded) =>
     User$reflection.staticInstance.fromJsonEncoded(jsonEncoded);
-
-class AdminUser$reflection extends ClassReflection<AdminUser> {
-  AdminUser$reflection([AdminUser? object]) : super(AdminUser, object);
-
-  static bool _registered = false;
-  @override
-  void register() {
-    if (!_registered) {
-      _registered = true;
-      super.register();
-      _registerSiblingsReflection();
-    }
-  }
-
-  @override
-  Version get languageVersion => Version.parse('2.12.0');
-
-  @override
-  Version get reflectionFactoryVersion => Version.parse('1.0.19');
-
-  @override
-  AdminUser$reflection withObject([AdminUser? obj]) =>
-      AdminUser$reflection(obj);
-
-  static AdminUser$reflection? _withoutObjectInstance;
-  @override
-  AdminUser$reflection withoutObjectInstance() => _withoutObjectInstance ??=
-      super.withoutObjectInstance() as AdminUser$reflection;
-
-  static AdminUser$reflection get staticInstance =>
-      _withoutObjectInstance ??= AdminUser$reflection();
-
-  @override
-  bool get hasDefaultConstructor => true;
-  @override
-  AdminUser? createInstanceWithDefaultConstructor() => AdminUser();
-
-  @override
-  bool get hasEmptyConstructor => false;
-  @override
-  AdminUser? createInstanceWithEmptyConstructor() => null;
-  @override
-  bool get hasNoRequiredArgsConstructor => false;
-  @override
-  AdminUser? createInstanceWithNoRequiredArgsConstructor() => null;
-
-  @override
-  List<String> get constructorsNames => const <String>[''];
-
-  @override
-  ConstructorReflection<AdminUser>? constructor<R>(String constructorName) {
-    var lc = constructorName.trim().toLowerCase();
-
-    switch (lc) {
-      case '':
-        return ConstructorReflection<AdminUser>(this, AdminUser, '',
-            () => () => AdminUser(), null, null, null, null);
-      default:
-        return null;
-    }
-  }
-
-  @override
-  List<Object> get classAnnotations => List<Object>.unmodifiable(<Object>[]);
-
-  @override
-  List<ClassReflection> siblingsClassReflection() =>
-      _siblingsReflection().whereType<ClassReflection>().toList();
-
-  @override
-  List<Reflection> siblingsReflection() => _siblingsReflection();
-
-  @override
-  List<Type> get supperTypes => const <Type>[User, Model];
-
-  @override
-  bool get hasMethodToJson => false;
-
-  @override
-  Object? callMethodToJson([AdminUser? obj]) => null;
-
-  @override
-  List<String> get fieldsNames =>
-      const <String>['age', 'email', 'fields', 'foo', 'hasEmail', 'pass'];
-
-  @override
-  FieldReflection<AdminUser, T>? field<T>(String fieldName, [AdminUser? obj]) {
-    obj ??= object;
-
-    var lc = fieldName.trim().toLowerCase();
-
-    switch (lc) {
-      case 'email':
-        return FieldReflection<AdminUser, T>(
-          this,
-          User,
-          TypeReflection.tString,
-          'email',
-          true,
-          (o) => () => o!.email as T,
-          (o) => (T? v) => o!.email = v as String?,
-          obj,
-          false,
-          false,
-          null,
-        );
-      case 'pass':
-        return FieldReflection<AdminUser, T>(
-          this,
-          User,
-          TypeReflection.tString,
-          'pass',
-          false,
-          (o) => () => o!.pass as T,
-          (o) => (T? v) => o!.pass = v as String,
-          obj,
-          false,
-          false,
-          null,
-        );
-      case 'age':
-        return FieldReflection<AdminUser, T>(
-          this,
-          User,
-          TypeReflection.tInt,
-          'age',
-          false,
-          (o) => () => o!.age as T,
-          null,
-          obj,
-          false,
-          true,
-          null,
-        );
-      case 'foo':
-        return FieldReflection<AdminUser, T>(
-          this,
-          User,
-          TypeReflection(Foo),
-          'foo',
-          false,
-          (o) => () => o!.foo as T,
-          null,
-          obj,
-          false,
-          true,
-          null,
-        );
-      case 'hasemail':
-        return FieldReflection<AdminUser, T>(
-          this,
-          User,
-          TypeReflection.tBool,
-          'hasEmail',
-          false,
-          (o) => () => o!.hasEmail as T,
-          null,
-          obj,
-          false,
-          false,
-          null,
-        );
-      case 'fields':
-        return FieldReflection<AdminUser, T>(
-          this,
-          User,
-          TypeReflection.tDynamic,
-          'fields',
-          false,
-          (o) => () => o!.fields as T,
-          null,
-          obj,
-          false,
-          false,
-          null,
-        );
-      default:
-        return null;
-    }
-  }
-
-  @override
-  List<String> get staticFieldsNames => const <String>[];
-
-  @override
-  FieldReflection<AdminUser, T>? staticField<T>(String fieldName) {
-    return null;
-  }
-
-  @override
-  List<String> get methodsNames => const <String>['checkPassword'];
-
-  @override
-  MethodReflection<AdminUser, R>? method<R>(String methodName,
-      [AdminUser? obj]) {
-    obj ??= object;
-
-    var lc = methodName.trim().toLowerCase();
-
-    switch (lc) {
-      case 'checkpassword':
-        return MethodReflection<AdminUser, R>(
-            this,
-            User,
-            'checkPassword',
-            TypeReflection.tBool,
-            false,
-            (o) => o!.checkPassword,
-            obj,
-            false,
-            const <ParameterReflection>[
-              ParameterReflection(
-                  TypeReflection.tString, 'pass', false, true, null, null)
-            ],
-            null,
-            null,
-            null);
-      default:
-        return null;
-    }
-  }
-
-  @override
-  List<String> get staticMethodsNames => const <String>[];
-
-  @override
-  MethodReflection<AdminUser, R>? staticMethod<R>(String methodName) {
-    return null;
-  }
-}
 
 class User$reflection extends ClassReflection<User> {
   User$reflection([User? object]) : super(User, object);
@@ -329,7 +93,11 @@ class User$reflection extends ClassReflection<User> {
     }
   }
 
-  static const List<Object> _classAnnotations = [ann1(), ann2()];
+  static const List<Object> _classAnnotations = [
+    ann1(),
+    ann2(),
+    dorm.table('t_user')
+  ];
 
   @override
   List<Object> get classAnnotations =>
@@ -343,7 +111,7 @@ class User$reflection extends ClassReflection<User> {
   List<Reflection> siblingsReflection() => _siblingsReflection();
 
   @override
-  List<Type> get supperTypes => const <Type>[Model];
+  List<Type> get supperTypes => const <Type>[];
 
   @override
   bool get hasMethodToJson => false;
@@ -353,7 +121,7 @@ class User$reflection extends ClassReflection<User> {
 
   @override
   List<String> get fieldsNames =>
-      const <String>['age', 'email', 'fields', 'foo', 'hasEmail', 'pass'];
+      const <String>['age', 'email', 'hasEmail', 'pass', 'payload'];
 
   @override
   FieldReflection<User, T>? field<T>(String fieldName, [User? obj]) {
@@ -374,7 +142,7 @@ class User$reflection extends ClassReflection<User> {
           obj,
           false,
           false,
-          null,
+          [dorm.field(unique: true)],
         );
       case 'pass':
         return FieldReflection<User, T>(
@@ -388,7 +156,7 @@ class User$reflection extends ClassReflection<User> {
           obj,
           false,
           false,
-          null,
+          [dorm.field()],
         );
       case 'age':
         return FieldReflection<User, T>(
@@ -402,16 +170,16 @@ class User$reflection extends ClassReflection<User> {
           obj,
           false,
           true,
-          null,
+          [dorm.field()],
         );
-      case 'foo':
+      case 'payload':
         return FieldReflection<User, T>(
           this,
           User,
-          TypeReflection(Foo),
-          'foo',
+          TypeReflection(Payload),
+          'payload',
           false,
-          (o) => () => o!.foo as T,
+          (o) => () => o!.payload as T,
           null,
           obj,
           false,
@@ -426,20 +194,6 @@ class User$reflection extends ClassReflection<User> {
           'hasEmail',
           false,
           (o) => () => o!.hasEmail as T,
-          null,
-          obj,
-          false,
-          false,
-          null,
-        );
-      case 'fields':
-        return FieldReflection<User, T>(
-          this,
-          User,
-          TypeReflection.tDynamic,
-          'fields',
-          false,
-          (o) => () => o!.fields as T,
           null,
           obj,
           false,
@@ -500,24 +254,6 @@ class User$reflection extends ClassReflection<User> {
   }
 }
 
-extension AdminUser$reflectionExtension on AdminUser {
-  /// Returns a [ClassReflection] for type [AdminUser]. (Generated by [ReflectionFactory])
-  ClassReflection<AdminUser> get reflection => AdminUser$reflection(this);
-
-  /// Returns a JSON for type [AdminUser]. (Generated by [ReflectionFactory])
-  Object? toJson() => reflection.toJson();
-
-  /// Returns a JSON [Map] for type [AdminUser]. (Generated by [ReflectionFactory])
-  Map<String, dynamic>? toJsonMap() => reflection.toJsonMap();
-
-  /// Returns an encoded JSON [String] for type [AdminUser]. (Generated by [ReflectionFactory])
-  String toJsonEncoded({bool pretty = false}) =>
-      reflection.toJsonEncoded(pretty: pretty);
-
-  /// Returns a JSON for type [AdminUser] using the class fields. (Generated by [ReflectionFactory])
-  Object? toJsonFromFields() => reflection.toJsonFromFields();
-}
-
 extension User$reflectionExtension on User {
   /// Returns a [ClassReflection] for type [User]. (Generated by [ReflectionFactory])
   ClassReflection<User> get reflection => User$reflection(this);
@@ -536,23 +272,8 @@ extension User$reflectionExtension on User {
   Object? toJsonFromFields() => reflection.toJsonFromFields();
 }
 
-extension UserBridge$reflectionExtension on UserBridge {
-  /// Returns a [ClassReflection] for type [T] or [obj]. (Generated by [ReflectionFactory])
-  ClassReflection<T> reflection<T>([T? obj]) {
-    switch (T) {
-      case User:
-        return User$reflection(obj as User?) as ClassReflection<T>;
-      case AdminUser:
-        return AdminUser$reflection(obj as AdminUser?) as ClassReflection<T>;
-      default:
-        throw UnsupportedError('<$runtimeType> No reflection for Type: $T');
-    }
-  }
-}
-
 List<Reflection> _listSiblingsReflection() => <Reflection>[
       User$reflection(),
-      AdminUser$reflection(),
     ];
 
 List<Reflection>? _siblingsReflectionList;

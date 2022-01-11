@@ -1,15 +1,14 @@
 import 'package:reflection_factory/reflection_factory.dart';
 import 'package:test/test.dart';
 
+import 'package:dorm/dorm.dart';
+import 'package:dorm/annotation.dart' as dorm;
+
 part 'reflection_test.reflection.g.dart';
 
-class Foo {
+class Payload {
   @override
-  String toString() => 'foo';
-}
-
-abstract class Model {
-  dynamic get fields;
+  String toString() => 'payload';
 }
 
 class ann1 {
@@ -22,16 +21,21 @@ class ann2 {
 
 @ann1()
 @ann2()
+@dorm.table('t_user')
 @EnableReflection()
-class User extends Model {
+class User {
+  @dorm.field(unique: true)
   String? email;
 
+  @dorm.field()
   String pass;
+
+  @dorm.field()
   final int age;
-  final Foo foo = Foo();
+
+  final Payload payload = Payload();
 
   User(this.email, this.pass, this.age);
-
   User.empty() : this(null, '', 0);
 
   bool get hasEmail => email != null;
@@ -39,19 +43,7 @@ class User extends Model {
   bool checkPassword(String pass) {
     return this.pass == pass;
   }
-
-  dynamic get fields {
-    return (toJsonFromFields() as Map).keys;
-  }
 }
-
-@EnableReflection()
-class AdminUser extends User {
-  AdminUser() : super('admin@foo.com', '', 33);
-}
-
-@ReflectionBridge([User, AdminUser])
-class UserBridge {}
 
 main() {
   test('model', () {
@@ -70,7 +62,7 @@ main() {
     final a4 = user.reflection.methodsNames;
     final a5 = user.reflection.staticMethodsNames;
 
-    expect(user.fields, ['age', 'email', 'foo', 'pass']);
+    // expect(user.fields, ['age', 'email', 'pass', 'payload']);
   });
 
   test('UserReflection', () {
@@ -90,13 +82,26 @@ main() {
 
     expect(u.age, 0);
     expect(u.pass, '');
-  });
 
-  test('Bridge', () {
-    // final ref1 = ClassReflection<User>([User]);
+    {
+      final m = Model(User$reflection());
+      final table = m.table;
+      expect(table, isNotNull);
+      expect(table!.fields.length, 3);
+      expect(m.table!.fields[0].name, 'age');
+      expect(m.valueOf(m.table!.fields[0]), isNull);
+    }
 
-    final ref2 = UserBridge().reflection<User>();
-    final u = ref2.createInstance();
-    expect(u!.age, 0);
+    {
+      final m = Model(User$reflection(u));
+      expect(m.table!.fields[0].name, 'age');
+      expect(m.valueOf(m.table!.fields[0]), 0);
+
+      expect(m.table!.fields[1].name, 'email');
+      expect(m.valueOf(m.table!.fields[1]), 'a@b.com');
+
+      expect(m.insertSql,
+          'INSERT INTO `t_user`(age, email, pass) VALUES (0, "a@b.com", "")');
+    }
   });
 }

@@ -1,46 +1,52 @@
+import 'package:reflection_factory/reflection_factory.dart';
 import 'package:dorm/dorm.dart';
+import 'package:dorm/annotation.dart' as dorm;
 
-@table('category', 'test')
-class Category extends Model {
+part 'models.reflection.g.dart';
+
+@EnableReflection()
+@dorm.table('category', bind: 'test')
+class Category {
   @primaryKey
   int? cid;
 
-  @field(unique: true, index: true, maxLength: 100)
-  String name;
+  @dorm.field(unique: true, index: true, maxLength: 100)
+  String? name;
 
-  @field(nullable: true)
+  @dorm.field(nullable: true)
   DateTime? ctime;
 
-  @field(nullable: true)
+  @dorm.field(nullable: true)
   double? ratio;
 
-  @field(enums: ['reserved', 'normal'], defaultValue: 'normal')
+  @dorm.field(enums: ['reserved', 'normal'], defaultValue: 'normal')
   String? type;
 
   Category({
     this.cid,
-    required this.name,
+    this.name,
     this.ctime,
     this.ratio,
     this.type,
   });
 }
 
-@table('article', 'test')
-class Article extends Model {
+@EnableReflection()
+@dorm.table('article', bind: 'test')
+class Article {
   @primaryKey
   int? id;
 
-  @field(maxLength: 100)
+  @dorm.field(maxLength: 100)
   String? topic;
 
-  @field(defaultValue: 'Mike', nullable: true)
+  @dorm.field(defaultValue: 'Mike', nullable: true)
   String? author;
 
-  @field(defaultValue: 'paper', enums: ['paper', 'other'])
-  String type;
+  @dorm.field(defaultValue: 'paper', enums: ['paper', 'other'])
+  String? type;
 
-  @field(foreignKey: 'category.cid', nullable: true)
+  @dorm.field(foreignKey: 'category.cid', nullable: true)
   int? cid;
 
   Category? category;
@@ -54,7 +60,7 @@ class Article extends Model {
     this.id,
     this.topic,
     this.author,
-    required this.type,
+    this.type,
     this.cid,
     this.category,
   });
